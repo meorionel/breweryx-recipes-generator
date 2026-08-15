@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   Beer,
@@ -17,6 +18,7 @@ import {
   generateRecipe,
   buildSummary,
   type IngredientInput,
+  type Translate,
 } from "./services/recipe.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,6 +143,8 @@ const Field = ({
 );
 
 export function RecipeForm() {
+  const { t } = useTranslation();
+  const translate: Translate = (key, vars) => t(key, vars);
   const [quality, setQuality] = useState(false);
   const [nameBad, setNameBad] = useState("");
   const [nameNormal, setNameNormal] = useState("");
@@ -181,11 +185,11 @@ export function RecipeForm() {
 
   const addIngredient = () => {
     if (!selectedItem) {
-      toast.error("请先从查询结果中选择物品");
+      toast.error(t("ingredients.selectFirst"));
       return;
     }
     if (Number.isNaN(itemAmount) || itemAmount <= 0) {
-      toast.error("数量必须是正整数");
+      toast.error(t("ingredients.amountInvalid"));
       return;
     }
     setIngredients((prev) => [...prev, { item: selectedItem.id, amount: itemAmount }]);
@@ -219,16 +223,16 @@ export function RecipeForm() {
     e.preventDefault();
 
     const errs: Record<string, string> = {};
-    if (!str(nameNormal)) errs.name = "请填写普通名称";
-    if (quality && !str(nameBad)) errs.nameBad = "请填写劣质名称";
-    if (quality && !str(nameGood)) errs.nameGood = "请填写优质名称";
-    if (num(cookingtime) === undefined) errs.cookingtime = "请填写煮制时间(分钟)";
-    if (num(difficulty) === undefined) errs.difficulty = "请填写难度(1-10)";
-    if (ingredients.length === 0) errs.ingredients = "请添加至少一种原料";
+    if (!str(nameNormal)) errs.name = t("errors.name");
+    if (quality && !str(nameBad)) errs.nameBad = t("errors.nameBad");
+    if (quality && !str(nameGood)) errs.nameGood = t("errors.nameGood");
+    if (num(cookingtime) === undefined) errs.cookingtime = t("errors.cookingtime");
+    if (num(difficulty) === undefined) errs.difficulty = t("errors.difficulty");
+    if (ingredients.length === 0) errs.ingredients = t("errors.ingredients");
 
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
-      toast.error("请完善必填项", { description: Object.values(errs).join("\n") });
+      toast.error(t("toast.filledRequired"), { description: Object.values(errs).join("\n") });
       return;
     }
     setFieldErrors({});
@@ -268,14 +272,14 @@ export function RecipeForm() {
       }),
     };
 
-    const result = validateRecipe(payload);
+    const result = validateRecipe(payload, translate);
     if (!result.ok) {
-      toast.error("配方校验失败", { description: result.errors.join("\n") });
+      toast.error(t("toast.invalid"), { description: result.errors.join("\n") });
       return;
     }
     setYaml(generateRecipe(result.data));
-    setSummary(buildSummary(result.data));
-    toast.success("配方已生成");
+    setSummary(buildSummary(result.data, translate));
+    toast.success(t("toast.generated"));
   };
 
   const copyYaml = async () => {
@@ -283,9 +287,9 @@ export function RecipeForm() {
       await navigator.clipboard.writeText(yaml);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-      toast.success("配方代码已复制");
+      toast.success(t("toast.copied"));
     } catch (err) {
-      toast.error(`复制失败: ${(err as Error).message}`);
+      toast.error(t("toast.copyFailed", { message: (err as Error).message }));
     }
   };
 
@@ -318,7 +322,7 @@ export function RecipeForm() {
     setYaml("");
     setFieldErrors({});
     setCopied(false);
-    toast.success("表单已清空");
+    toast.success(t("toast.reset"));
   };
 
   useEffect(() => {
@@ -329,22 +333,22 @@ export function RecipeForm() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold">配方信息</h2>
-        <p className="text-sm text-muted-foreground">填写酿造参数,生成 BreweryX 配方代码</p>
+        <h2 className="text-xl font-semibold">{t("form.title")}</h2>
+        <p className="text-sm text-muted-foreground">{t("form.subtitle")}</p>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-8">
         <section className="space-y-4">
           <CheckboxRow
             id="quality"
-            label="区分三种品质"
-            description="分别填写劣质、普通、优质三种品质的名称与描述"
+            label={t("quality.label")}
+            description={t("quality.desc")}
             checked={quality}
             onCheckedChange={setQuality}
           />
           <div className="space-y-3">
             {quality && (
-              <Field label="劣质名称" required>
+              <Field label={t("name.bad")} required>
                 <Input
                   type="text"
                   value={nameBad}
@@ -353,11 +357,11 @@ export function RecipeForm() {
                     setNameBad(e.target.value);
                     clearFieldError("nameBad");
                   }}
-                  placeholder="劣质名称"
+                  placeholder={t("name.bad")}
                 />
               </Field>
             )}
-            <Field label="普通名称" required>
+            <Field label={t("name.normal")} required>
               <Input
                 type="text"
                 value={nameNormal}
@@ -366,11 +370,11 @@ export function RecipeForm() {
                   setNameNormal(e.target.value);
                   clearFieldError("name");
                 }}
-                placeholder="普通名称"
+                placeholder={t("name.normal")}
               />
             </Field>
             {quality && (
-              <Field label="优质名称" required>
+              <Field label={t("name.good")} required>
                 <Input
                   type="text"
                   value={nameGood}
@@ -379,7 +383,7 @@ export function RecipeForm() {
                     setNameGood(e.target.value);
                     clearFieldError("nameGood");
                   }}
-                  placeholder="优质名称"
+                  placeholder={t("name.good")}
                 />
               </Field>
             )}
@@ -389,39 +393,39 @@ export function RecipeForm() {
         <Separator />
 
         <section className="space-y-4">
-          <SectionTitle title="描述" />
-          <Field label="通用描述">
+          <SectionTitle title={t("lore.title")} />
+          <Field label={t("lore.common")}>
             <Textarea
               value={loreCommon}
               onChange={(e) => setLoreCommon(e.target.value)}
               rows={3}
-              placeholder="任何品质都显示,每行一条"
+              placeholder={t("lore.commonPh")}
             />
           </Field>
           {quality && (
             <>
-              <Field label="劣质品质描述">
+              <Field label={t("lore.bad")}>
                 <Textarea
                   value={loreBad}
                   onChange={(e) => setLoreBad(e.target.value)}
                   rows={3}
-                  placeholder="劣质品质显示,留空则不输出"
+                  placeholder={t("lore.emptyPh")}
                 />
               </Field>
-              <Field label="普通品质描述">
+              <Field label={t("lore.normal")}>
                 <Textarea
                   value={loreNormal}
                   onChange={(e) => setLoreNormal(e.target.value)}
                   rows={3}
-                  placeholder="普通品质显示,留空则不输出"
+                  placeholder={t("lore.emptyPh")}
                 />
               </Field>
-              <Field label="优质品质描述">
+              <Field label={t("lore.good")}>
                 <Textarea
                   value={loreGood}
                   onChange={(e) => setLoreGood(e.target.value)}
                   rows={3}
-                  placeholder="优质品质显示,留空则不输出"
+                  placeholder={t("lore.emptyPh")}
                 />
               </Field>
             </>
@@ -431,22 +435,22 @@ export function RecipeForm() {
         <Separator />
 
         <section className="space-y-4">
-          <SectionTitle title="饮用消息" />
+          <SectionTitle title={t("drink.title")} />
           <Input
             type="text"
             value={drinkmessage}
             onChange={(e) => setDrinkmessage(e.target.value)}
-            placeholder="味道不错"
+            placeholder={t("drink.ph")}
           />
         </section>
 
         <Separator />
 
         <section className="space-y-4">
-          <SectionTitle title="原料" description="搜索物品后添加到配方中" />
+          <SectionTitle title={t("ingredients.title")} description={t("ingredients.desc")} />
           <div className="flex flex-wrap items-end gap-2">
             <div className="grid min-w-[220px] flex-1 gap-1.5">
-              <Label>物品</Label>
+              <Label>{t("ingredients.item")}</Label>
               <Combobox
                 items={itemOptions}
                 value={selectedItem}
@@ -455,7 +459,7 @@ export function RecipeForm() {
                 isItemEqualToValue={(a, b) => a.id === b.id}
               >
                 <ComboboxInput
-                  placeholder="输入中文或 id 查询物品"
+                  placeholder={t("ingredients.searchPh")}
                   aria-invalid={!!fieldErrors.ingredients}
                 />
                 <ComboboxContent>
@@ -471,7 +475,7 @@ export function RecipeForm() {
             </div>
             <Input
               type="number"
-              placeholder="数量"
+              placeholder={t("ingredients.amountPh")}
               className="h-8 w-24"
               min={1}
               max={99999}
@@ -485,7 +489,7 @@ export function RecipeForm() {
               onClick={addIngredient}
               disabled={!selectedItem}
             >
-              <Plus data-icon="inline-start" /> 添加
+              <Plus data-icon="inline-start" /> {t("ingredients.add")}
             </Button>
           </div>
           {ingredients.length > 0 && (
@@ -504,7 +508,7 @@ export function RecipeForm() {
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      aria-label="删除"
+                      aria-label={t("ingredients.remove")}
                       onClick={() => removeIngredient(idx)}
                     >
                       <X />
@@ -519,9 +523,9 @@ export function RecipeForm() {
         <Separator />
 
         <section className="space-y-4">
-          <SectionTitle title="酿造参数" />
+          <SectionTitle title={t("brew.title")} />
           <NumberField
-            label="煮制时间(分钟)"
+            label={t("brew.cookingtime")}
             required
             min={0}
             max={720}
@@ -535,22 +539,22 @@ export function RecipeForm() {
           <div className="space-y-3">
             <CheckboxRow
               id="distill"
-              label="蒸馏"
-              description="进行二次蒸馏以获得更高浓度"
+              label={t("brew.distill")}
+              description={t("brew.distillDesc")}
               checked={enableDistill}
               onCheckedChange={setEnableDistill}
             />
             {enableDistill && (
               <div className="grid gap-4 pl-6 sm:grid-cols-2">
                 <NumberField
-                  label="蒸馏次数"
+                  label={t("brew.distillruns")}
                   min={0}
                   max={10}
                   value={distillruns}
                   onChange={setDistillruns}
                 />
                 <NumberField
-                  label="单次蒸馏时间(秒)"
+                  label={t("brew.distilltime")}
                   min={0}
                   max={3600}
                   step={30}
@@ -563,17 +567,17 @@ export function RecipeForm() {
           <div className="space-y-3">
             <CheckboxRow
               id="age"
-              label="陈酿"
-              description="在酒桶中陈酿以提升品质"
+              label={t("brew.age")}
+              description={t("brew.ageDesc")}
               checked={enableAge}
               onCheckedChange={setEnableAge}
             />
             {enableAge && (
               <div className="grid gap-4 pl-6 sm:grid-cols-2">
-                <Field label="酒桶木材">
+                <Field label={t("brew.wood")}>
                   <Select value={wood} onValueChange={(v) => setWood(Number(v))}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="选择木材" />
+                      <SelectValue placeholder={t("brew.woodPh")} />
                     </SelectTrigger>
                     <SelectContent>
                       {WOOD_OPTIONS.map((w) => (
@@ -585,7 +589,7 @@ export function RecipeForm() {
                   </Select>
                 </Field>
                 <NumberField
-                  label="陈酿时间(MC 天数)"
+                  label={t("brew.ageDays")}
                   min={0}
                   max={1000}
                   value={age}
@@ -599,18 +603,18 @@ export function RecipeForm() {
         <Separator />
 
         <section className="space-y-4">
-          <SectionTitle title="外观与难度" />
+          <SectionTitle title={t("appearance.title")} />
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="颜色">
+            <Field label={t("appearance.color")}>
               <Input
                 type="text"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                placeholder="DARK_RED"
+                placeholder={t("appearance.colorPh")}
               />
             </Field>
             <NumberField
-              label="难度(1-10)"
+              label={t("appearance.difficulty")}
               required
               min={1}
               max={10}
@@ -622,7 +626,7 @@ export function RecipeForm() {
               invalid={!!fieldErrors.difficulty}
             />
             <NumberField
-              label="酒精度(-100 ~ 100)"
+              label={t("appearance.alcohol")}
               min={-100}
               max={100}
               value={alcohol}
@@ -631,8 +635,8 @@ export function RecipeForm() {
           </div>
           <CheckboxRow
             id="glint"
-            label="附魔光泽"
-            description="药水瓶是否显示附魔效果"
+            label={t("appearance.glint")}
+            description={t("appearance.glintDesc")}
             checked={glint}
             onCheckedChange={setGlint}
           />
@@ -641,7 +645,7 @@ export function RecipeForm() {
         <Separator />
 
         <section className="space-y-4">
-          <SectionTitle title="药水效果" description="勾选启用效果,并在下方设置等级与持续时间" />
+          <SectionTitle title={t("effects.title")} description={t("effects.desc")} />
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {EFFECTS.map((e) => (
               <label key={e.id} className="flex cursor-pointer items-center gap-2">
@@ -649,7 +653,7 @@ export function RecipeForm() {
                   checked={effects[e.id]!.enabled}
                   onCheckedChange={(v) => setEffectEnabled(e.id, v)}
                 />
-                <span className="text-sm">{e.name}</span>
+                <span className="text-sm">{t(`effects.names.${e.id}`)}</span>
               </label>
             ))}
           </div>
@@ -666,9 +670,13 @@ export function RecipeForm() {
                       i > 0 && "border-t"
                     )}
                   >
-                    <span className="w-24 shrink-0 text-sm font-medium">{e.name}</span>
+                    <span className="w-24 shrink-0 text-sm font-medium">
+                      {t(`effects.names.${e.id}`)}
+                    </span>
                     <div className="flex min-w-40 flex-1 items-center gap-2">
-                      <span className="w-8 shrink-0 text-xs text-muted-foreground">等级</span>
+                      <span className="w-8 shrink-0 text-xs text-muted-foreground">
+                        {t("effects.level")}
+                      </span>
                       <Slider
                         className="w-36 shrink-0"
                         min={1}
@@ -692,7 +700,9 @@ export function RecipeForm() {
                     </div>
                     {!isInstant && (
                       <div className="flex min-w-40 flex-1 items-center gap-2">
-                        <span className="w-8 shrink-0 text-xs text-muted-foreground">时间</span>
+                        <span className="w-8 shrink-0 text-xs text-muted-foreground">
+                          {t("effects.time")}
+                        </span>
                         <Slider
                           className="w-36 shrink-0"
                           min={1}
@@ -729,27 +739,25 @@ export function RecipeForm() {
             <AlertDialogTrigger
               render={
                 <Button type="button" variant="outline">
-                  <RotateCcw data-icon="inline-start" /> 一键清空
+                  <RotateCcw data-icon="inline-start" /> {t("actions.clear")}
                 </Button>
               }
             />
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>确认清空?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  所有已填写的配方数据将被清除,此操作无法撤销。
-                </AlertDialogDescription>
+                <AlertDialogTitle>{t("clearDialog.title")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("clearDialog.desc")}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogCancel>{t("clearDialog.cancel")}</AlertDialogCancel>
                 <AlertDialogAction variant="destructive" onClick={resetForm}>
-                  清空
+                  {t("clearDialog.confirm")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
           <Button type="submit">
-            <Sparkles data-icon="inline-start" /> 生成配方
+            <Sparkles data-icon="inline-start" /> {t("actions.generate")}
           </Button>
         </div>
       </form>
@@ -761,17 +769,17 @@ export function RecipeForm() {
           <>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold">生成的配方</h2>
-                <p className="text-sm text-muted-foreground">配方预览与 YAML 代码</p>
+                <h2 className="text-lg font-semibold">{t("result.title")}</h2>
+                <p className="text-sm text-muted-foreground">{t("result.subtitle")}</p>
               </div>
               <Button variant="outline" onClick={copyYaml}>
                 {copied ? (
                   <>
-                    <Check data-icon="inline-start" /> 已复制!
+                    <Check data-icon="inline-start" /> {t("result.copied")}
                   </>
                 ) : (
                   <>
-                    <Copy data-icon="inline-start" /> 复制代码
+                    <Copy data-icon="inline-start" /> {t("result.copy")}
                   </>
                 )}
               </Button>
@@ -790,8 +798,8 @@ export function RecipeForm() {
             <div className="flex size-10 items-center justify-center rounded-full bg-muted">
               <Beer className="size-5 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium">还没有配方</p>
-            <p className="text-xs text-muted-foreground">填写上方表单后点击「生成配方」</p>
+            <p className="text-sm font-medium">{t("result.empty")}</p>
+            <p className="text-xs text-muted-foreground">{t("result.emptyHint")}</p>
           </div>
         )}
       </section>

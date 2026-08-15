@@ -1,0 +1,203 @@
+{
+  "app": {
+    "title": "BreweryX Recipe Generator",
+    "subtitle": "Generate BreweryX brewing recipe YAML"
+  },
+  "theme": {
+    "toggle": "Toggle theme"
+  },
+  "language": "Language",
+  "form": {
+    "title": "Recipe Info",
+    "subtitle": "Fill in brewing parameters to generate BreweryX recipe code"
+  },
+  "quality": {
+    "label": "Differentiate three qualities",
+    "desc": "Set separate names and lore for Poor, Normal and Excellent qualities"
+  },
+  "name": {
+    "bad": "Poor name",
+    "normal": "Normal name",
+    "good": "Excellent name"
+  },
+  "lore": {
+    "title": "Lore",
+    "common": "Common lore",
+    "bad": "Poor quality lore",
+    "normal": "Normal quality lore",
+    "good": "Excellent quality lore",
+    "commonPh": "Shown for all qualities, one per line",
+    "emptyPh": "Leave blank to omit"
+  },
+  "drink": {
+    "title": "Drink message",
+    "ph": "Tastes great"
+  },
+  "ingredients": {
+    "title": "Ingredients",
+    "desc": "Search and add items to the recipe",
+    "item": "Item",
+    "searchPh": "Search by name or id",
+    "amount": "Amount",
+    "amountPh": "Amount",
+    "add": "Add",
+    "remove": "Remove",
+    "selectFirst": "Please select an item from the search results first",
+    "amountInvalid": "Amount must be a positive integer"
+  },
+  "brew": {
+    "title": "Brewing",
+    "cookingtime": "Cooking time (minutes)",
+    "distill": "Distill",
+    "distillDesc": "Distill again for a higher concentration",
+    "distillruns": "Distill runs",
+    "distilltime": "Time per run (seconds)",
+    "age": "Age",
+    "ageDesc": "Age in barrels to improve quality",
+    "wood": "Barrel wood",
+    "woodPh": "Select wood",
+    "ageDays": "Age (MC days)"
+  },
+  "appearance": {
+    "title": "Appearance & Difficulty",
+    "color": "Color",
+    "colorPh": "DARK_RED",
+    "difficulty": "Difficulty (1-10)",
+    "alcohol": "Alcohol (-100 ~ 100)",
+    "glint": "Glint",
+    "glintDesc": "Whether the potion bottle shows the enchantment glint"
+  },
+  "effects": {
+    "title": "Potion Effects",
+    "desc": "Check to enable an effect and configure its level and duration below",
+    "level": "Level",
+    "time": "Time",
+    "names": {
+      "speed": "Speed",
+      "slowness": "Slowness",
+      "haste": "Haste",
+      "mining_fatigue": "Mining Fatigue",
+      "strength": "Strength",
+      "instant_health": "Instant Health",
+      "instant_damage": "Instant Damage",
+      "jump_boost": "Jump Boost",
+      "nausea": "Nausea",
+      "regeneration": "Regeneration",
+      "resistance": "Resistance",
+      "fire_resistance": "Fire Resistance",
+      "water_breathing": "Water Breathing",
+      "invisibility": "Invisibility",
+      "blindness": "Blindness",
+      "night_vision": "Night Vision",
+      "hunger": "Hunger",
+      "weakness": "Weakness",
+      "poison": "Poison",
+      "wither": "Wither",
+      "health_boost": "Health Boost",
+      "absorption": "Absorption",
+      "saturation": "Saturation",
+      "glowing": "Glowing",
+      "levitation": "Levitation",
+      "luck": "Luck",
+      "unluck": "Bad Luck",
+      "slow_falling": "Slow Falling",
+      "conduit_power": "Conduit Power",
+      "dolphins_grace": "Dolphin's Grace",
+      "bad_omen": "Bad Omen",
+      "hero_of_the_village": "Hero of the Village",
+      "darkness": "Darkness",
+      "trial_omen": "Trial Omen",
+      "raid_omen": "Raid Omen",
+      "wind_charged": "Wind Charged",
+      "weaving": "Weaving",
+      "oozing": "Oozing",
+      "infested": "Infested",
+      "breath_of_the_nautilus": "Breath of the Nautilus"
+    }
+  },
+  "actions": {
+    "clear": "Clear all",
+    "generate": "Generate recipe"
+  },
+  "clearDialog": {
+    "title": "Clear everything?",
+    "desc": "All filled recipe data will be cleared. This cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Clear"
+  },
+  "result": {
+    "title": "Generated Recipe",
+    "subtitle": "Recipe preview and YAML code",
+    "copy": "Copy code",
+    "copied": "Copied!",
+    "empty": "No recipe yet",
+    "emptyHint": "Fill in the form above and click \"Generate recipe\""
+  },
+  "toast": {
+    "filledRequired": "Please complete required fields",
+    "invalid": "Recipe validation failed",
+    "generated": "Recipe generated",
+    "copied": "Recipe code copied",
+    "copyFailed": "Copy failed: {{message}}",
+    "reset": "Form cleared"
+  },
+  "errors": {
+    "name": "Please fill in the normal name",
+    "nameBad": "Please fill in the poor name",
+    "nameGood": "Please fill in the excellent name",
+    "cookingtime": "Please fill in cooking time (minutes)",
+    "difficulty": "Please fill in difficulty (1-10)",
+    "ingredients": "Please add at least one ingredient"
+  },
+  "validate": {
+    "reqObject": "Request body must be a JSON object",
+    "keyNotNumber": "{{key}} must be a number",
+    "keyNotInteger": "{{key}} must be an integer",
+    "keyRange": "{{key}} must be between {{min}}-{{max}}",
+    "keyMin": "{{key}} must be ≥ {{min}}",
+    "keyRequired": "{{key}} is required",
+    "keyNotString": "{{key}} must be a string",
+    "qualityNotBoolean": "quality must be a boolean",
+    "nameNotArray": "name must be an array",
+    "nameCount": "name needs {{count}} non-empty value(s)",
+    "loreNotObject": "lore must be an object { common, bad, normal, good }",
+    "loreKeyNotArray": "lore.{{key}} must be an array of strings",
+    "ingredientsNotArray": "ingredients must be an array",
+    "ingredientsEmpty": "ingredients needs at least one item",
+    "ingredientNotObject": "Each ingredient must be an object { item, amount }",
+    "ingredientBadItem": "An ingredient is missing a valid item (e.g. apple)",
+    "ingredientBadAmount": "Ingredient \"{{item}}\" amount must be a positive integer",
+    "effectsNotArray": "effects must be an array",
+    "effectNotObject": "Each effect must be an object { id, level, duration }",
+    "effectBadId": "Effect \"{{id}}\" is not a valid potion effect",
+    "effectBadLevel": "Effect \"{{id}}\" level must be an integer between {{min}}-{{max}}",
+    "effectBadDuration": "Effect \"{{id}}\" duration must be an integer between {{min}}-{{max}} seconds",
+    "colorInvalid": "color \"{{color}}\" must be a color name or 6-digit HEX (without #)",
+    "glintNotBoolean": "glint must be a boolean true/false"
+  },
+  "summary": {
+    "name": "Name: {{name}}",
+    "ingredients": "Ingredients: {{ingredients}}",
+    "cookingtime": "Cooking time: {{value}} minutes",
+    "distillruns": "Distill runs: {{value}}",
+    "distilltime": "Time per run: {{value}} seconds",
+    "wood": "Wood: {{value}}",
+    "age": "Age: {{value}} days",
+    "color": "Color: {{value}}",
+    "difficulty": "Difficulty: {{value}}",
+    "alcohol": "Alcohol: {{value}}",
+    "lore": "Lore: {{value}}",
+    "drinkmessage": "Drink message: {{value}}",
+    "glint": "Glint: Yes",
+    "loreGroup": {
+      "common": "Common",
+      "bad": "Poor",
+      "normal": "Normal",
+      "good": "Excellent"
+    },
+    "loreLine": "[{{label}}] {{line}}",
+    "effectItem": "{{name}}(Level {{level}}{{duration}})",
+    "effectDuration": ", {{value}}s",
+    "effects": "Effects: {{value}}"
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "app": {
+    "title": "BreweryX 配方生成器",
+    "subtitle": "生成 BreweryX 酿造配方 YAML 代码"
+  },
+  "theme": {
+    "toggle": "切换主题"
+  },
+  "language": "语言",
+  "form": {
+    "title": "配方信息",
+    "subtitle": "填写酿造参数,生成 BreweryX 配方代码"
+  },
+  "quality": {
+    "label": "区分三种品质",
+    "desc": "分别填写劣质、普通、优质三种品质的名称与描述"
+  },
+  "name": {
+    "bad": "劣质名称",
+    "normal": "普通名称",
+    "good": "优质名称"
+  },
+  "lore": {
+    "title": "描述",
+    "common": "通用描述",
+    "bad": "劣质品质描述",
+    "normal": "普通品质描述",
+    "good": "优质品质描述",
+    "commonPh": "任何品质都显示,每行一条",
+    "emptyPh": "留空则不输出"
+  },
+  "drink": {
+    "title": "饮用消息",
+    "ph": "味道不错"
+  },
+  "ingredients": {
+    "title": "原料",
+    "desc": "搜索物品后添加到配方中",
+    "item": "物品",
+    "searchPh": "输入中文或 id 查询物品",
+    "amount": "数量",
+    "amountPh": "数量",
+    "add": "添加",
+    "remove": "删除",
+    "selectFirst": "请先从查询结果中选择物品",
+    "amountInvalid": "数量必须是正整数"
+  },
+  "brew": {
+    "title": "酿造参数",
+    "cookingtime": "煮制时间(分钟)",
+    "distill": "蒸馏",
+    "distillDesc": "进行二次蒸馏以获得更高浓度",
+    "distillruns": "蒸馏次数",
+    "distilltime": "单次蒸馏时间(秒)",
+    "age": "陈酿",
+    "ageDesc": "在酒桶中陈酿以提升品质",
+    "wood": "酒桶木材",
+    "woodPh": "选择木材",
+    "ageDays": "陈酿时间(MC 天数)"
+  },
+  "appearance": {
+    "title": "外观与难度",
+    "color": "颜色",
+    "colorPh": "DARK_RED",
+    "difficulty": "难度(1-10)",
+    "alcohol": "酒精度(-100 ~ 100)",
+    "glint": "附魔光泽",
+    "glintDesc": "药水瓶是否显示附魔效果"
+  },
+  "effects": {
+    "title": "药水效果",
+    "desc": "勾选启用效果,并在下方设置等级与持续时间",
+    "level": "等级",
+    "time": "时间",
+    "names": {
+      "speed": "迅捷",
+      "slowness": "缓慢",
+      "haste": "急迫",
+      "mining_fatigue": "挖掘疲劳",
+      "strength": "力量",
+      "instant_health": "瞬间治疗",
+      "instant_damage": "瞬间伤害",
+      "jump_boost": "跳跃提升",
+      "nausea": "反胃",
+      "regeneration": "生命恢复",
+      "resistance": "抗性提升",
+      "fire_resistance": "抗火",
+      "water_breathing": "水下呼吸",
+      "invisibility": "隐身",
+      "blindness": "失明",
+      "night_vision": "夜视",
+      "hunger": "饥饿",
+      "weakness": "虚弱",
+      "poison": "中毒",
+      "wither": "凋零",
+      "health_boost": "生命提升",
+      "absorption": "伤害吸收",
+      "saturation": "饱和",
+      "glowing": "发光",
+      "levitation": "飘浮",
+      "luck": "幸运",
+      "unluck": "霉运",
+      "slow_falling": "缓降",
+      "conduit_power": "潮涌能量",
+      "dolphins_grace": "海豚的恩惠",
+      "bad_omen": "不祥之兆",
+      "hero_of_the_village": "村庄英雄",
+      "darkness": "黑暗",
+      "trial_omen": "试炼之兆",
+      "raid_omen": "突袭之兆",
+      "wind_charged": "风涌",
+      "weaving": "织网",
+      "oozing": "渗浆",
+      "infested": "虫蚀",
+      "breath_of_the_nautilus": "鹦鹉螺之息"
+    }
+  },
+  "actions": {
+    "clear": "一键清空",
+    "generate": "生成配方"
+  },
+  "clearDialog": {
+    "title": "确认清空?",
+    "desc": "所有已填写的配方数据将被清除,此操作无法撤销。",
+    "cancel": "取消",
+    "confirm": "清空"
+  },
+  "result": {
+    "title": "生成的配方",
+    "subtitle": "配方预览与 YAML 代码",
+    "copy": "复制代码",
+    "copied": "已复制!",
+    "empty": "还没有配方",
+    "emptyHint": "填写上方表单后点击「生成配方」"
+  },
+  "toast": {
+    "filledRequired": "请完善必填项",
+    "invalid": "配方校验失败",
+    "generated": "配方已生成",
+    "copied": "配方代码已复制",
+    "copyFailed": "复制失败: {{message}}",
+    "reset": "表单已清空"
+  },
+  "errors": {
+    "name": "请填写普通名称",
+    "nameBad": "请填写劣质名称",
+    "nameGood": "请填写优质名称",
+    "cookingtime": "请填写煮制时间(分钟)",
+    "difficulty": "请填写难度(1-10)",
+    "ingredients": "请添加至少一种原料"
+  },
+  "validate": {
+    "reqObject": "请求体必须是一个 JSON 对象",
+    "keyNotNumber": "{{key}} 必须是数字",
+    "keyNotInteger": "{{key}} 必须是整数",
+    "keyRange": "{{key}} 必须在 {{min}}-{{max}} 之间",
+    "keyMin": "{{key}} 必须 ≥ {{min}}",
+    "keyRequired": "{{key}} 为必填项",
+    "keyNotString": "{{key}} 必须是字符串",
+    "qualityNotBoolean": "quality 必须是布尔值",
+    "nameNotArray": "name 必须是数组",
+    "nameCount": "name 需要 {{count}} 个非空值",
+    "loreNotObject": "lore 必须是对象 { common, bad, normal, good }",
+    "loreKeyNotArray": "lore.{{key}} 必须是字符串数组",
+    "ingredientsNotArray": "ingredients 必须是数组",
+    "ingredientsEmpty": "ingredients 至少需要一项",
+    "ingredientNotObject": "ingredients 的每一项必须是对象 { item, amount }",
+    "ingredientBadItem": "ingredients 项缺少合法的 item(如 apple)",
+    "ingredientBadAmount": "ingredients 项 \"{{item}}\" 的数量必须是正整数",
+    "effectsNotArray": "effects 必须是数组",
+    "effectNotObject": "effects 的每一项必须是对象 { id, level, duration }",
+    "effectBadId": "effects 项 \"{{id}}\" 不是有效的药水效果",
+    "effectBadLevel": "effects 项 \"{{id}}\" 的等级必须是 {{min}}-{{max}} 的整数",
+    "effectBadDuration": "effects 项 \"{{id}}\" 的时长必须是 {{min}}-{{max}} 秒的整数",
+    "colorInvalid": "color \"{{color}}\" 必须是颜色名或 6 位 HEX(不带 #)",
+    "glintNotBoolean": "glint 必须是布尔值 true/false"
+  },
+  "summary": {
+    "name": "名称: {{name}}",
+    "ingredients": "原料: {{ingredients}}",
+    "cookingtime": "煮制时间: {{value}} 分钟",
+    "distillruns": "蒸馏次数: {{value}} 次",
+    "distilltime": "单次蒸馏时间: {{value}} 秒",
+    "wood": "木材: {{value}}",
+    "age": "陈酿时间: {{value}} 天",
+    "color": "颜色: {{value}}",
+    "difficulty": "难度: {{value}}",
+    "alcohol": "酒精度: {{value}}",
+    "lore": "描述: {{value}}",
+    "drinkmessage": "饮用消息: {{value}}",
+    "glint": "发光: 是",
+    "loreGroup": {
+      "common": "通用",
+      "bad": "劣质",
+      "normal": "普通",
+      "good": "优质"
+    },
+    "loreLine": "[{{label}}] {{line}}",
+    "effectItem": "{{name}}(等级{{level}}{{duration}})",
+    "effectDuration": ", {{value}}秒",
+    "effects": "效果: {{value}}"
+  }
+}

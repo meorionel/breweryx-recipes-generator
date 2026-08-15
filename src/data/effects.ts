@@ -34,6 +34,13 @@ export const EFFECTS: EffectDef[] = [
   { name: '不祥之兆', id: 'bad_omen' },
   { name: '村庄英雄', id: 'hero_of_the_village' },
   { name: '黑暗', id: 'darkness' },
+  { name: '试炼之兆', id: 'trial_omen' },
+  { name: '突袭之兆', id: 'raid_omen' },
+  { name: '风涌', id: 'wind_charged' },
+  { name: '织网', id: 'weaving' },
+  { name: '渗浆', id: 'oozing' },
+  { name: '虫蚀', id: 'infested' },
+  { name: '鹦鹉螺之息', id: 'breath_of_the_nautilus' },
 ]
 
 export const EFFECT_IDS = new Set(EFFECTS.map((e) => e.id))

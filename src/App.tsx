@@ -1,26 +1,60 @@
 import { ThemeProvider, useTheme } from "next-themes";
+import { useTranslation } from "react-i18next";
 import { Beer, Moon, Sun } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LANGUAGES } from "@/i18n";
 import { RecipeForm } from "./RecipeForm";
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
   const isDark = theme === "dark";
   return (
     <Button
       variant="outline"
       size="icon"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      aria-label="切换主题"
+      aria-label={t("theme.toggle")}
     >
       {isDark ? <Sun /> : <Moon />}
     </Button>
   );
 }
 
+function LanguageSelect() {
+  const { i18n, t } = useTranslation();
+  return (
+    <Select
+      value={i18n.language}
+      onValueChange={(v) => {
+        if (v) i18n.changeLanguage(v);
+      }}
+    >
+      <SelectTrigger className="w-28" aria-label={t("language")}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {LANGUAGES.map((lang) => (
+          <SelectItem key={lang.value} value={lang.value}>
+            {lang.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function App() {
+  const { t } = useTranslation();
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
       <TooltipProvider>
@@ -32,11 +66,14 @@ export function App() {
                   <Beer className="size-5" />
                 </div>
                 <div>
-                  <h1 className="text-base font-semibold leading-tight">BreweryX 配方生成器</h1>
-                  <p className="text-xs text-muted-foreground">生成 BreweryX 酿造配方 YAML 代码</p>
+                  <h1 className="text-base font-semibold leading-tight">{t("app.title")}</h1>
+                  <p className="text-xs text-muted-foreground">{t("app.subtitle")}</p>
                 </div>
               </div>
-              <ThemeToggle />
+              <div className="flex items-center gap-2">
+                <LanguageSelect />
+                <ThemeToggle />
+              </div>
             </div>
           </header>
           <main className="mx-auto max-w-6xl px-4 py-6">

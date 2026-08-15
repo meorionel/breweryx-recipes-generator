@@ -58,6 +58,8 @@ export type ValidationResult =
   | { ok: true; data: RecipeInput }
   | { ok: false; errors: string[] }
 
+export type Translate = (key: string, vars?: Record<string, string | number>) => string
+
 export function generateKey(length: number = KEY_LENGTH): string {
   const bytes = crypto.getRandomValues(new Uint8Array(length))
   let out = ''
@@ -66,11 +68,13 @@ export function generateKey(length: number = KEY_LENGTH): string {
   return out
 }
 
-export function validateRecipe(raw: unknown): ValidationResult {
+export function validateRecipe(raw: unknown, translate?: Translate): ValidationResult {
   const errors: string[] = []
+  const t = (key: string, fallback: string, vars?: Record<string, string | number>): string =>
+    translate ? translate(key, vars) : fallback
 
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-    return { ok: false, errors: ['请求体必须是一个 JSON 对象'] }
+    return { ok: false, errors: [t('validate.reqObject', '请求体必须是一个 JSON 对象')] }
   }
 
   const input = raw as Record<string, unknown>
@@ -83,15 +87,19 @@ export function validateRecipe(raw: unknown): ValidationResult {
     if (isEmpty(v)) return undefined
     const n = Number(v)
     if (Number.isNaN(n) || !Number.isFinite(n)) {
-      errors.push(`${key} 必须是数字`)
+      errors.push(t('validate.keyNotNumber', `${key} 必须是数字`, { key }))
       return undefined
     }
     if (!Number.isInteger(n)) {
-      errors.push(`${key} 必须是整数`)
+      errors.push(t('validate.keyNotInteger', `${key} 必须是整数`, { key }))
       return undefined
     }
     if (n < min || n > max) {
-      errors.push(Number.isFinite(max) ? `${key} 必须在 ${min}-${max} 之间` : `${key} 必须 ≥ ${min}`)
+      errors.push(
+        Number.isFinite(max)
+          ? t('validate.keyRange', `${key} 必须在 ${min}-${max} 之间`, { key, min, max })
+          : t('validate.keyMin', `${key} 必须 ≥ ${min}`, { key, min })
+      )
       return undefined
     }
     return n
@@ -99,7 +107,7 @@ export function validateRecipe(raw: unknown): ValidationResult {
 
   const reqInt = (key: string, min: number, max: number): number | undefined => {
     if (isEmpty(input[key])) {
-      errors.push(`${key} 为必填项`)
+      errors.push(t('validate.keyRequired', `${key} 为必填项`, { key }))
       return undefined
     }
     return optInt(key, min, max)
@@ -109,7 +117,7 @@ export function validateRecipe(raw: unknown): ValidationResult {
     const v = input[key]
     if (isEmpty(v)) return undefined
     if (typeof v !== 'string') {
-      errors.push(`${key} 必须是字符串`)
+      errors.push(t('validate.keyNotString', `${key} 必须是字符串`, { key }))
       return undefined
     }
     return v.trim()
@@ -118,7 +126,7 @@ export function validateRecipe(raw: unknown): ValidationResult {
   let quality = false
   if (input.quality !== undefined && input.quality !== null) {
     if (typeof input.quality !== 'boolean') {
-      errors.push('quality 必须是布尔值')
+      errors.push(t('validate.qualityNotBoolean', 'quality 必须是布尔值'))
     } else {
       quality = input.quality
     }
@@ -126,14 +134,14 @@ export function validateRecipe(raw: unknown): ValidationResult {
 
   const name: string[] = []
   if (!Array.isArray(input.name)) {
-    errors.push('name 必须是数组')
+    errors.push(t('validate.nameNotArray', 'name 必须是数组'))
   } else {
     const names = input.name
       .map((v) => (typeof v === 'string' ? v.trim() : ''))
       .filter((s) => s !== '')
     const expected = quality ? 3 : 1
     if (names.length !== expected) {
-      errors.push(`name 需要 ${expected} 个非空值`)
+      errors.push(t('validate.nameCount', `name 需要 ${expected} 个非空值`, { count: expected }))
     }
     name.push(...names)
   }
@@ -141,14 +149,14 @@ export function validateRecipe(raw: unknown): ValidationResult {
   const lore: LoreInput = { common: [], bad: [], normal: [], good: [] }
   if (input.lore !== undefined && input.lore !== null) {
     if (typeof input.lore !== 'object' || Array.isArray(input.lore)) {
-      errors.push('lore 必须是对象 { common, bad, normal, good }')
+      errors.push(t('validate.loreNotObject', 'lore 必须是对象 { common, bad, normal, good }'))
     } else {
       const lr = input.lore as Record<string, unknown>
       for (const key of ['common', 'bad', 'normal', 'good'] as const) {
         const v = lr[key]
         if (v === undefined || v === null) continue
         if (!Array.isArray(v)) {
-          errors.push(`lore.${key} 必须是字符串数组`)
+          errors.push(t('validate.loreKeyNotArray', `lore.${key} 必须是字符串数组`, { key }))
         } else {
           lore[key] = v
             .map((s) => (typeof s === 'string' ? s.trim() : ''))
@@ -165,18 +173,18 @@ export function validateRecipe(raw: unknown): ValidationResult {
 
   const ingredients: IngredientInput[] = []
   if (!Array.isArray(input.ingredients)) {
-    errors.push('ingredients 必须是数组')
+    errors.push(t('validate.ingredientsNotArray', 'ingredients 必须是数组'))
   } else if (input.ingredients.length === 0) {
-    errors.push('ingredients 至少需要一项')
+    errors.push(t('validate.ingredientsEmpty', 'ingredients 至少需要一项'))
   } else {
     for (const it of input.ingredients) {
       if (typeof it !== 'object' || it === null) {
-        errors.push('ingredients 的每一项必须是对象 { item, amount }')
+        errors.push(t('validate.ingredientNotObject', 'ingredients 的每一项必须是对象 { item, amount }'))
         continue
       }
       const { item, amount } = it as Record<string, unknown>
       if (typeof item !== 'string' || item.trim() === '' || !ITEM_ID_RE.test(item.trim())) {
-        errors.push(`ingredients 项缺少合法的 item(如 apple)`)
+        errors.push(t('validate.ingredientBadItem', 'ingredients 项缺少合法的 item(如 apple)'))
         continue
       }
       if (
@@ -185,7 +193,11 @@ export function validateRecipe(raw: unknown): ValidationResult {
         amount < INGREDIENT_AMOUNT_MIN ||
         amount > INGREDIENT_AMOUNT_MAX
       ) {
-        errors.push(`ingredients 项 "${item}" 的数量必须是正整数`)
+        errors.push(
+          t('validate.ingredientBadAmount', `ingredients 项 "${item}" 的数量必须是正整数`, {
+            item: String(item),
+          })
+        )
         continue
       }
       ingredients.push({ item: item.trim(), amount })
@@ -195,16 +207,18 @@ export function validateRecipe(raw: unknown): ValidationResult {
   const effects: EffectInput[] = []
   if (input.effects !== undefined && input.effects !== null) {
     if (!Array.isArray(input.effects)) {
-      errors.push('effects 必须是数组')
+      errors.push(t('validate.effectsNotArray', 'effects 必须是数组'))
     } else {
       for (const ef of input.effects) {
         if (typeof ef !== 'object' || ef === null) {
-          errors.push('effects 的每一项必须是对象 { id, level, duration }')
+          errors.push(t('validate.effectNotObject', 'effects 的每一项必须是对象 { id, level, duration }'))
           continue
         }
         const { id, level, duration } = ef as Record<string, unknown>
         if (typeof id !== 'string' || !EFFECT_IDS.has(id)) {
-          errors.push(`effects 项 "${String(id)}" 不是有效的药水效果`)
+          errors.push(
+            t('validate.effectBadId', `effects 项 "${String(id)}" 不是有效的药水效果`, { id: String(id) })
+          )
           continue
         }
         if (
@@ -213,7 +227,13 @@ export function validateRecipe(raw: unknown): ValidationResult {
           level < EFFECT_LEVEL_MIN ||
           level > EFFECT_LEVEL_MAX
         ) {
-          errors.push(`effects 项 "${id}" 的等级必须是 ${EFFECT_LEVEL_MIN}-${EFFECT_LEVEL_MAX} 的整数`)
+          errors.push(
+            t(
+              'validate.effectBadLevel',
+              `effects 项 "${id}" 的等级必须是 ${EFFECT_LEVEL_MIN}-${EFFECT_LEVEL_MAX} 的整数`,
+              { id, min: EFFECT_LEVEL_MIN, max: EFFECT_LEVEL_MAX }
+            )
+          )
           continue
         }
         let dur: number | undefined
@@ -224,7 +244,13 @@ export function validateRecipe(raw: unknown): ValidationResult {
             duration < EFFECT_DURATION_MIN ||
             duration > EFFECT_DURATION_MAX
           ) {
-            errors.push(`effects 项 "${id}" 的时长必须是 ${EFFECT_DURATION_MIN}-${EFFECT_DURATION_MAX} 秒的整数`)
+            errors.push(
+              t(
+                'validate.effectBadDuration',
+                `effects 项 "${id}" 的时长必须是 ${EFFECT_DURATION_MIN}-${EFFECT_DURATION_MAX} 秒的整数`,
+                { id, min: EFFECT_DURATION_MIN, max: EFFECT_DURATION_MAX }
+              )
+            )
             continue
           }
           dur = duration
@@ -244,7 +270,9 @@ export function validateRecipe(raw: unknown): ValidationResult {
 
   const color = optString('color')
   if (color && !COLORS.has(color.toUpperCase()) && !HEX_COLOR.test(color)) {
-    errors.push(`color "${color}" 必须是颜色名或 6 位 HEX(不带 #)`)
+    errors.push(
+      t('validate.colorInvalid', `color "${color}" 必须是颜色名或 6 位 HEX(不带 #)`, { color })
+    )
   }
 
   const drinkmessage = optString('drinkmessage')
@@ -256,7 +284,7 @@ export function validateRecipe(raw: unknown): ValidationResult {
     } else if (typeof input.glint === 'string' && (input.glint === 'true' || input.glint === 'false')) {
       glint = input.glint === 'true'
     } else {
-      errors.push('glint 必须是布尔值 true/false')
+      errors.push(t('validate.glintNotBoolean', 'glint 必须是布尔值 true/false'))
     }
   }
 
@@ -361,57 +389,93 @@ export function generateRecipe(input: RecipeInput): string {
   return `${input.key}:\n${body.map((line) => `  ${line}`).join('\n')}\n`
 }
 
-export function buildSummary(input: RecipeInput): string[] {
+export function buildSummary(input: RecipeInput, translate?: Translate): string[] {
   const lines: string[] = []
+  const t = (key: string, fallback: string, vars?: Record<string, string | number>): string =>
+    translate ? translate(key, vars) : fallback
 
-  lines.push(
-    input.name.length === 3 ? `名称: ${input.name.join(' / ')}` : `名称: ${input.name[0]}`
-  )
+  const nameText = input.name.length === 3 ? input.name.join(' / ') : input.name[0]!
+  lines.push(t('summary.name', `名称: ${nameText}`, { name: nameText }))
 
   const ingredientsText = input.ingredients
     .map((it) => `${ITEM_CN_BY_ID.get(it.item) ?? it.item} x${it.amount}`)
     .join(', ')
-  lines.push(`原料: ${ingredientsText}`)
+  lines.push(t('summary.ingredients', `原料: ${ingredientsText}`, { ingredients: ingredientsText }))
 
-  lines.push(`煮制时间: ${input.cookingtime} 分钟`)
-  if (input.distillruns !== undefined) lines.push(`蒸馏次数: ${input.distillruns} 次`)
-  if (input.distilltime !== undefined) lines.push(`单次蒸馏时间: ${input.distilltime} 秒`)
-  if (input.wood !== undefined) {
-    lines.push(`木材: ${WOOD_LABEL_BY_VALUE.get(input.wood) ?? input.wood}`)
+  lines.push(t('summary.cookingtime', `煮制时间: ${input.cookingtime} 分钟`, { value: input.cookingtime }))
+  if (input.distillruns !== undefined) {
+    lines.push(t('summary.distillruns', `蒸馏次数: ${input.distillruns} 次`, { value: input.distillruns }))
   }
-  if (input.age !== undefined) lines.push(`陈酿时间: ${input.age} 天`)
-  if (input.color) lines.push(`颜色: ${input.color}`)
-  lines.push(`难度: ${input.difficulty}`)
-  if (input.alcohol !== undefined) lines.push(`酒精度: ${input.alcohol}`)
+  if (input.distilltime !== undefined) {
+    lines.push(t('summary.distilltime', `单次蒸馏时间: ${input.distilltime} 秒`, { value: input.distilltime }))
+  }
+  if (input.wood !== undefined) {
+    const woodText = WOOD_LABEL_BY_VALUE.get(input.wood) ?? String(input.wood)
+    lines.push(t('summary.wood', `木材: ${woodText}`, { value: woodText }))
+  }
+  if (input.age !== undefined) {
+    lines.push(t('summary.age', `陈酿时间: ${input.age} 天`, { value: input.age }))
+  }
+  if (input.color) {
+    lines.push(t('summary.color', `颜色: ${input.color}`, { value: input.color }))
+  }
+  lines.push(t('summary.difficulty', `难度: ${input.difficulty}`, { value: input.difficulty }))
+  if (input.alcohol !== undefined) {
+    lines.push(t('summary.alcohol', `酒精度: ${input.alcohol}`, { value: input.alcohol }))
+  }
 
   const loreTexts: string[] = []
   if (input.quality) {
     const groups: [string, string[]][] = [
-      ['通用', input.lore.common],
-      ['劣质', input.lore.bad],
-      ['普通', input.lore.normal],
-      ['优质', input.lore.good],
+      ['common', input.lore.common],
+      ['bad', input.lore.bad],
+      ['normal', input.lore.normal],
+      ['good', input.lore.good],
     ]
-    for (const [label, group] of groups) {
-      for (const line of group) loreTexts.push(`[${label}] ${line}`)
+    const groupLabels: Record<string, string> = {
+      common: t('summary.loreGroup.common', '通用'),
+      bad: t('summary.loreGroup.bad', '劣质'),
+      normal: t('summary.loreGroup.normal', '普通'),
+      good: t('summary.loreGroup.good', '优质'),
+    }
+    for (const [labelKey, group] of groups) {
+      for (const line of group) {
+        const label = groupLabels[labelKey] ?? labelKey
+        loreTexts.push(t('summary.loreLine', `[${label}] ${line}`, { label, line }))
+      }
     }
   } else {
     loreTexts.push(...input.lore.common)
   }
-  if (loreTexts.length > 0) lines.push(`描述: ${loreTexts.join('; ')}`)
+  if (loreTexts.length > 0) {
+    const loreText = loreTexts.join('; ')
+    lines.push(t('summary.lore', `描述: ${loreText}`, { value: loreText }))
+  }
 
-  if (input.drinkmessage) lines.push(`饮用消息: ${input.drinkmessage}`)
-  if (input.glint) lines.push('发光: 是')
+  if (input.drinkmessage) {
+    lines.push(t('summary.drinkmessage', `饮用消息: ${input.drinkmessage}`, { value: input.drinkmessage }))
+  }
+  if (input.glint) {
+    lines.push(t('summary.glint', '发光: 是'))
+  }
 
   if (input.effects && input.effects.length > 0) {
     const effectsText = input.effects
       .map((ef) => {
-        const name = EFFECT_NAME_BY_ID.get(ef.id) ?? ef.id
-        const durationText = INSTANT_EFFECTS.has(ef.id) ? '' : `, ${ef.duration ?? 1}秒`
-        return `${name}(等级${ef.level}${durationText})`
+        const name =
+          translate?.(`effects.names.${ef.id}`) ??
+          (EFFECT_NAME_BY_ID.get(ef.id) ?? ef.id)
+        const duration = INSTANT_EFFECTS.has(ef.id)
+          ? ''
+          : t('summary.effectDuration', `, ${ef.duration ?? 1}秒`, { value: ef.duration ?? 1 })
+        return t('summary.effectItem', `${name}(等级${ef.level}${duration})`, {
+          name,
+          level: ef.level,
+          duration,
+        })
       })
       .join('; ')
-    lines.push(`效果: ${effectsText}`)
+    lines.push(t('summary.effects', `效果: ${effectsText}`, { value: effectsText }))
   }
 
   return lines
