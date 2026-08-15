@@ -1,6 +1,6 @@
 import { ThemeProvider, useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
-import { Beer, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -62,9 +62,11 @@ export function App() {
           <header className="sticky top-0 z-40 border-b bg-card/60 backdrop-blur">
             <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Beer className="size-5" />
-                </div>
+                <img
+                  src="/logo.png"
+                  alt="BreweryX"
+                  className="size-9 rounded-lg object-contain"
+                />
                 <div>
                   <h1 className="text-base font-semibold leading-tight">{t("app.title")}</h1>
                   <p className="text-xs text-muted-foreground">{t("app.subtitle")}</p>

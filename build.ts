@@ -1,3 +1,4 @@
+import { cpSync, existsSync } from "node:fs";
 import tailwindPlugin from "bun-plugin-tailwind";
 
 const result = await Bun.build({
@@ -14,4 +15,8 @@ const result = await Bun.build({
 if (!result.success) {
   console.error(result.logs);
   process.exit(1);
+}
+
+if (existsSync("./public")) {
+  cpSync("./public", "./dist", { recursive: true });
 }

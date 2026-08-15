@@ -3,6 +3,7 @@ import index from "./index.html";
 
 const server = serve({
   routes: {
+    "/logo.png": Bun.file("public/logo.png"),
     "/*": index,
   },
 
