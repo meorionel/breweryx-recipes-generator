@@ -1,0 +1,41 @@
+export type EffectDef = { name: string; id: string }
+
+export const EFFECTS: EffectDef[] = [
+  { name: '迅捷', id: 'speed' },
+  { name: '缓慢', id: 'slowness' },
+  { name: '急迫', id: 'haste' },
+  { name: '挖掘疲劳', id: 'mining_fatigue' },
+  { name: '力量', id: 'strength' },
+  { name: '瞬间治疗', id: 'instant_health' },
+  { name: '瞬间伤害', id: 'instant_damage' },
+  { name: '跳跃提升', id: 'jump_boost' },
+  { name: '反胃', id: 'nausea' },
+  { name: '生命恢复', id: 'regeneration' },
+  { name: '抗性提升', id: 'resistance' },
+  { name: '抗火', id: 'fire_resistance' },
+  { name: '水下呼吸', id: 'water_breathing' },
+  { name: '隐身', id: 'invisibility' },
+  { name: '失明', id: 'blindness' },
+  { name: '夜视', id: 'night_vision' },
+  { name: '饥饿', id: 'hunger' },
+  { name: '虚弱', id: 'weakness' },
+  { name: '中毒', id: 'poison' },
+  { name: '凋零', id: 'wither' },
+  { name: '生命提升', id: 'health_boost' },
+  { name: '伤害吸收', id: 'absorption' },
+  { name: '饱和', id: 'saturation' },
+  { name: '发光', id: 'glowing' },
+  { name: '飘浮', id: 'levitation' },
+  { name: '幸运', id: 'luck' },
+  { name: '霉运', id: 'unluck' },
+  { name: '缓降', id: 'slow_falling' },
+  { name: '潮涌能量', id: 'conduit_power' },
+  { name: '海豚的恩惠', id: 'dolphins_grace' },
+  { name: '不祥之兆', id: 'bad_omen' },
+  { name: '村庄英雄', id: 'hero_of_the_village' },
+  { name: '黑暗', id: 'darkness' },
+]
+
+export const EFFECT_IDS = new Set(EFFECTS.map((e) => e.id))
+
+export const INSTANT_EFFECTS = new Set(['instant_health', 'instant_damage'])
