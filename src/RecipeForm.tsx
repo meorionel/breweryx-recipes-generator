@@ -1,4 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import {
+  Beer,
+  Check,
+  Copy,
+  Plus,
+  RotateCcw,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { EFFECTS, INSTANT_EFFECTS } from "./data/effects";
 import { WOOD_OPTIONS } from "./data/constants";
 import itemMap from "./data/item_map.json";
@@ -8,9 +18,46 @@ import {
   buildSummary,
   type IngredientInput,
 } from "./services/recipe.service";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { CheckboxRow } from "@/components/checkbox-row";
+import { NumberField } from "@/components/number-field";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
 type EffectState = { enabled: boolean; level: string; duration: string };
 type EffectStates = Record<string, EffectState>;
+type ItemOption = { cn: string; id: string };
 
 const initialEffectStates = (): EffectStates =>
   Object.fromEntries(EFFECTS.map((e) => [e.id, { enabled: false, level: "", duration: "" }]));
@@ -65,6 +112,34 @@ const parseColorText = (text: string): string => {
 
 const cnByItem = new Map(Object.entries(itemMap).map(([cn, id]) => [id, cn]));
 
+const Required = () => <span className="text-destructive">*</span>;
+
+const SectionTitle = ({ title, description }: { title: string; description?: string }) => (
+  <div>
+    <h3 className="text-sm font-semibold">{title}</h3>
+    {description && <p className="text-xs text-muted-foreground">{description}</p>}
+  </div>
+);
+
+const Field = ({
+  label,
+  required,
+  children,
+  className,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div className={cn("grid gap-1.5", className)}>
+    <Label>
+      {label} {required && <Required />}
+    </Label>
+    {children}
+  </div>
+);
+
 export function RecipeForm() {
   const [quality, setQuality] = useState(false);
   const [nameBad, setNameBad] = useState("");
@@ -75,59 +150,61 @@ export function RecipeForm() {
   const [loreNormal, setLoreNormal] = useState("");
   const [loreGood, setLoreGood] = useState("");
   const [drinkmessage, setDrinkmessage] = useState("");
-  const [cookingtime, setCookingtime] = useState("");
+  const [cookingtime, setCookingtime] = useState("0");
   const [enableDistill, setEnableDistill] = useState(false);
-  const [distillruns, setDistillruns] = useState("");
-  const [distilltime, setDistilltime] = useState("");
+  const [distillruns, setDistillruns] = useState("0");
+  const [distilltime, setDistilltime] = useState("0");
   const [enableAge, setEnableAge] = useState(false);
   const [wood, setWood] = useState(0);
-  const [age, setAge] = useState("");
+  const [age, setAge] = useState("0");
   const [color, setColor] = useState("");
-  const [difficulty, setDifficulty] = useState("");
-  const [alcohol, setAlcohol] = useState("");
+  const [difficulty, setDifficulty] = useState("1");
+  const [alcohol, setAlcohol] = useState("0");
   const [glint, setGlint] = useState(false);
   const [effects, setEffects] = useState<EffectStates>(initialEffectStates);
 
-  const [itemQuery, setItemQuery] = useState("");
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ItemOption | null>(null);
   const [itemAmount, setItemAmount] = useState(1);
   const [ingredients, setIngredients] = useState<IngredientInput[]>([]);
 
   const [summary, setSummary] = useState<string[]>([]);
   const [yaml, setYaml] = useState("");
-  const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const itemResults = useMemo(() => {
-    const kw = itemQuery.trim().toLowerCase();
-    if (!kw) return [];
-    return Object.entries(itemMap)
-      .filter(([cn, id]) => cn.toLowerCase().includes(kw) || String(id).toLowerCase().includes(kw))
-      .slice(0, 8);
-  }, [itemQuery]);
+  const itemOptions = useMemo<ItemOption[]>(
+    () => Object.entries(itemMap).map(([cn, id]) => ({ cn, id })),
+    []
+  );
 
-  const selectItem = (id: string, cn: string) => {
-    setSelectedItem(id);
-    setItemQuery(`${cn} (${id})`);
-  };
+  const enabledEffects = EFFECTS.filter((e) => effects[e.id]?.enabled);
 
   const addIngredient = () => {
     if (!selectedItem) {
-      alert("请先从查询结果中选择物品");
+      toast.error("请先从查询结果中选择物品");
       return;
     }
     if (Number.isNaN(itemAmount) || itemAmount <= 0) {
-      alert("数量必须是正整数");
+      toast.error("数量必须是正整数");
       return;
     }
-    setIngredients((prev) => [...prev, { item: selectedItem, amount: itemAmount }]);
+    setIngredients((prev) => [...prev, { item: selectedItem.id, amount: itemAmount }]);
     setSelectedItem(null);
-    setItemQuery("");
     setItemAmount(1);
+    clearFieldError("ingredients");
   };
 
   const removeIngredient = (idx: number) => {
     setIngredients((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const clearFieldError = (key: string) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   const updateEffect = (id: string, patch: Partial<EffectState>) => {
@@ -140,7 +217,21 @@ export function RecipeForm() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError("");
+
+    const errs: Record<string, string> = {};
+    if (!str(nameNormal)) errs.name = "请填写普通名称";
+    if (quality && !str(nameBad)) errs.nameBad = "请填写劣质名称";
+    if (quality && !str(nameGood)) errs.nameGood = "请填写优质名称";
+    if (num(cookingtime) === undefined) errs.cookingtime = "请填写煮制时间(分钟)";
+    if (num(difficulty) === undefined) errs.difficulty = "请填写难度(1-10)";
+    if (ingredients.length === 0) errs.ingredients = "请添加至少一种原料";
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      toast.error("请完善必填项", { description: Object.values(errs).join("\n") });
+      return;
+    }
+    setFieldErrors({});
 
     const payload = {
       quality,
@@ -179,11 +270,12 @@ export function RecipeForm() {
 
     const result = validateRecipe(payload);
     if (!result.ok) {
-      setError(result.errors.join("\n"));
+      toast.error("配方校验失败", { description: result.errors.join("\n") });
       return;
     }
     setYaml(generateRecipe(result.data));
     setSummary(buildSummary(result.data));
+    toast.success("配方已生成");
   };
 
   const copyYaml = async () => {
@@ -191,8 +283,9 @@ export function RecipeForm() {
       await navigator.clipboard.writeText(yaml);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+      toast.success("配方代码已复制");
     } catch (err) {
-      setError(`复制失败: ${(err as Error).message}`);
+      toast.error(`复制失败: ${(err as Error).message}`);
     }
   };
 
@@ -206,26 +299,26 @@ export function RecipeForm() {
     setLoreNormal("");
     setLoreGood("");
     setDrinkmessage("");
-    setCookingtime("");
+    setCookingtime("0");
     setEnableDistill(false);
-    setDistillruns("");
-    setDistilltime("");
+    setDistillruns("0");
+    setDistilltime("0");
     setEnableAge(false);
     setWood(0);
-    setAge("");
+    setAge("0");
     setColor("");
-    setDifficulty("");
-    setAlcohol("");
+    setDifficulty("1");
+    setAlcohol("0");
     setGlint(false);
     setEffects(initialEffectStates());
-    setItemQuery("");
     setSelectedItem(null);
     setItemAmount(1);
     setIngredients([]);
     setSummary([]);
     setYaml("");
-    setError("");
+    setFieldErrors({});
     setCopied(false);
+    toast.success("表单已清空");
   };
 
   useEffect(() => {
@@ -234,335 +327,474 @@ export function RecipeForm() {
   }, [quality]);
 
   return (
-    <div>
-      <div>
-        <form onSubmit={handleSubmit}>
-          <label>
-            <input type="checkbox" checked={quality} onChange={(e) => setQuality(e.target.checked)} />
-            区分三种品质
-          </label>
+    <div className="mx-auto max-w-4xl">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold">配方信息</h2>
+        <p className="text-sm text-muted-foreground">填写酿造参数,生成 BreweryX 配方代码</p>
+      </div>
 
-          <div>
-            <span>
-              名称 <span>*</span>
-            </span>
+      <form onSubmit={handleSubmit} noValidate className="space-y-8">
+        <section className="space-y-4">
+          <CheckboxRow
+            id="quality"
+            label="区分三种品质"
+            description="分别填写劣质、普通、优质三种品质的名称与描述"
+            checked={quality}
+            onCheckedChange={setQuality}
+          />
+          <div className="space-y-3">
             {quality && (
-              <input
-                type="text"
-                value={nameBad}
-                onChange={(e) => setNameBad(e.target.value)}
-                placeholder="劣质名称"
-              />
+              <Field label="劣质名称" required>
+                <Input
+                  type="text"
+                  value={nameBad}
+                  aria-invalid={!!fieldErrors.nameBad}
+                  onChange={(e) => {
+                    setNameBad(e.target.value);
+                    clearFieldError("nameBad");
+                  }}
+                  placeholder="劣质名称"
+                />
+              </Field>
             )}
-            <input
-              type="text"
-              required
-              value={nameNormal}
-              onChange={(e) => setNameNormal(e.target.value)}
-              placeholder="普通名称"
-            />
-            {quality && (
-              <input
+            <Field label="普通名称" required>
+              <Input
                 type="text"
-                value={nameGood}
-                onChange={(e) => setNameGood(e.target.value)}
-                placeholder="优质名称"
+                value={nameNormal}
+                aria-invalid={!!fieldErrors.name}
+                onChange={(e) => {
+                  setNameNormal(e.target.value);
+                  clearFieldError("name");
+                }}
+                placeholder="普通名称"
               />
+            </Field>
+            {quality && (
+              <Field label="优质名称" required>
+                <Input
+                  type="text"
+                  value={nameGood}
+                  aria-invalid={!!fieldErrors.nameGood}
+                  onChange={(e) => {
+                    setNameGood(e.target.value);
+                    clearFieldError("nameGood");
+                  }}
+                  placeholder="优质名称"
+                />
+              </Field>
             )}
           </div>
+        </section>
 
-          <div>
-            <div>通用描述(任何品质都显示,留空则不输出)</div>
-            <textarea
+        <Separator />
+
+        <section className="space-y-4">
+          <SectionTitle title="描述" />
+          <Field label="通用描述">
+            <Textarea
               value={loreCommon}
               onChange={(e) => setLoreCommon(e.target.value)}
               rows={3}
-              placeholder="通用描述,每行一个,可添加多行"
+              placeholder="任何品质都显示,每行一条"
             />
-            {quality && (
-              <div>
-                <div>劣质品质描述</div>
-                <textarea
+          </Field>
+          {quality && (
+            <>
+              <Field label="劣质品质描述">
+                <Textarea
                   value={loreBad}
                   onChange={(e) => setLoreBad(e.target.value)}
                   rows={3}
                   placeholder="劣质品质显示,留空则不输出"
                 />
-                <div>普通品质描述</div>
-                <textarea
+              </Field>
+              <Field label="普通品质描述">
+                <Textarea
                   value={loreNormal}
                   onChange={(e) => setLoreNormal(e.target.value)}
                   rows={3}
                   placeholder="普通品质显示,留空则不输出"
                 />
-                <div>优质品质描述</div>
-                <textarea
+              </Field>
+              <Field label="优质品质描述">
+                <Textarea
                   value={loreGood}
                   onChange={(e) => setLoreGood(e.target.value)}
                   rows={3}
                   placeholder="优质品质显示,留空则不输出"
                 />
-              </div>
-            )}
-          </div>
+              </Field>
+            </>
+          )}
+        </section>
 
-          <div>
-            <span>饮用消息</span>
-            <input
-              type="text"
-              value={drinkmessage}
-              onChange={(e) => setDrinkmessage(e.target.value)}
-              placeholder="味道不错"
-            />
-          </div>
+        <Separator />
 
-          <div>
-            <div>
-              原料 <span>*</span>
-            </div>
-            <input
-              type="text"
-              value={itemQuery}
-              onChange={(e) => setItemQuery(e.target.value)}
-              placeholder="输入中文或 id 查询物品"
-            />
-            <div>
-              {itemResults.map(([cn, id]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => selectItem(id, cn)}
-                >
-                  {cn} ({id})
-                </button>
-              ))}
-            </div>
-            <div>
-              <div>
-                <span>数量</span>
-                <input
-                  type="number"
-                  value={itemAmount}
-                  min={1}
-                  max={99999}
-                  onChange={(e) => setItemAmount(Number(e.target.value))}
+        <section className="space-y-4">
+          <SectionTitle title="饮用消息" />
+          <Input
+            type="text"
+            value={drinkmessage}
+            onChange={(e) => setDrinkmessage(e.target.value)}
+            placeholder="味道不错"
+          />
+        </section>
+
+        <Separator />
+
+        <section className="space-y-4">
+          <SectionTitle title="原料" description="搜索物品后添加到配方中" />
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="grid min-w-[220px] flex-1 gap-1.5">
+              <Label>物品</Label>
+              <Combobox
+                items={itemOptions}
+                value={selectedItem}
+                onValueChange={setSelectedItem}
+                itemToStringLabel={(item) => `${item.cn} (${item.id})`}
+                isItemEqualToValue={(a, b) => a.id === b.id}
+              >
+                <ComboboxInput
+                  placeholder="输入中文或 id 查询物品"
+                  aria-invalid={!!fieldErrors.ingredients}
                 />
-              </div>
-              <button type="button" onClick={addIngredient}>
-                添加原料
-              </button>
+                <ComboboxContent>
+                  <ComboboxList>
+                    {itemOptions.map((item) => (
+                      <ComboboxItem key={item.id} value={item}>
+                        {item.cn} ({item.id})
+                      </ComboboxItem>
+                    ))}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
             </div>
-            <div>
+            <Input
+              type="number"
+              placeholder="数量"
+              className="h-8 w-24"
+              min={1}
+              max={99999}
+              value={itemAmount}
+              onChange={(e) => setItemAmount(Number(e.target.value))}
+              onWheel={(e) => e.currentTarget.blur()}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addIngredient}
+              disabled={!selectedItem}
+            >
+              <Plus data-icon="inline-start" /> 添加
+            </Button>
+          </div>
+          {ingredients.length > 0 && (
+            <ul className="space-y-1.5">
               {ingredients.map((ing, idx) => {
                 const cn = cnByItem.get(ing.item) ?? ing.item;
                 return (
-                  <div key={idx}>
+                  <li
+                    key={idx}
+                    className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+                  >
                     <span>
-                      {cn} x{ing.amount}
+                      {cn} <span className="text-muted-foreground">x{ing.amount}</span>
                     </span>
-                    <button type="button" onClick={() => removeIngredient(idx)}>
-                      删除
-                    </button>
-                  </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="删除"
+                      onClick={() => removeIngredient(idx)}
+                    >
+                      <X />
+                    </Button>
+                  </li>
                 );
               })}
-            </div>
-          </div>
+            </ul>
+          )}
+        </section>
 
-          <div>
-            <div>
-              煮 <span>*</span>
-            </div>
-            <div>
-              <span>煮制时间(分钟)</span>
-              <input
-                type="number"
-                required
-                min={0}
-                value={cookingtime}
-                onChange={(e) => setCookingtime(e.target.value)}
-              />
-            </div>
-          </div>
+        <Separator />
 
-          <div>
-            <label>
-              <input
-                type="checkbox"
-                checked={enableDistill}
-                onChange={(e) => setEnableDistill(e.target.checked)}
-              />
-              蒸馏
-            </label>
+        <section className="space-y-4">
+          <SectionTitle title="酿造参数" />
+          <NumberField
+            label="煮制时间(分钟)"
+            required
+            min={0}
+            max={720}
+            value={cookingtime}
+            onChange={(v) => {
+              setCookingtime(v);
+              clearFieldError("cookingtime");
+            }}
+            invalid={!!fieldErrors.cookingtime}
+          />
+          <div className="space-y-3">
+            <CheckboxRow
+              id="distill"
+              label="蒸馏"
+              description="进行二次蒸馏以获得更高浓度"
+              checked={enableDistill}
+              onCheckedChange={setEnableDistill}
+            />
             {enableDistill && (
-              <div>
-                <div>
-                  <span>蒸馏次数</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={distillruns}
-                    onChange={(e) => setDistillruns(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <span>单次蒸馏时间(秒)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={distilltime}
-                    onChange={(e) => setDistilltime(e.target.value)}
-                  />
-                </div>
+              <div className="grid gap-4 pl-6 sm:grid-cols-2">
+                <NumberField
+                  label="蒸馏次数"
+                  min={0}
+                  max={10}
+                  value={distillruns}
+                  onChange={setDistillruns}
+                />
+                <NumberField
+                  label="单次蒸馏时间(秒)"
+                  min={0}
+                  max={3600}
+                  step={30}
+                  value={distilltime}
+                  onChange={setDistilltime}
+                />
               </div>
             )}
           </div>
-
-          <div>
-            <label>
-              <input
-                type="checkbox"
-                checked={enableAge}
-                onChange={(e) => setEnableAge(e.target.checked)}
-              />
-              陈酿
-            </label>
+          <div className="space-y-3">
+            <CheckboxRow
+              id="age"
+              label="陈酿"
+              description="在酒桶中陈酿以提升品质"
+              checked={enableAge}
+              onCheckedChange={setEnableAge}
+            />
             {enableAge && (
-              <div>
-                <div>
-                  <span>酒桶木材</span>
-                  <select value={wood} onChange={(e) => setWood(Number(e.target.value))}>
-                    {WOOD_OPTIONS.map((w) => (
-                      <option key={w.value} value={w.value}>
-                        {w.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <span>陈酿时间(MC 天数)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                  />
-                </div>
+              <div className="grid gap-4 pl-6 sm:grid-cols-2">
+                <Field label="酒桶木材">
+                  <Select value={wood} onValueChange={(v) => setWood(Number(v))}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="选择木材" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WOOD_OPTIONS.map((w) => (
+                        <SelectItem key={w.value} value={w.value}>
+                          {w.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <NumberField
+                  label="陈酿时间(MC 天数)"
+                  min={0}
+                  max={1000}
+                  value={age}
+                  onChange={setAge}
+                />
               </div>
             )}
           </div>
+        </section>
 
-          <div>
-            <div>
-              <span>颜色</span>
-              <input
+        <Separator />
+
+        <section className="space-y-4">
+          <SectionTitle title="外观与难度" />
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="颜色">
+              <Input
                 type="text"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
                 placeholder="DARK_RED"
               />
-            </div>
-            <div>
-              <span>
-                难度 1-10 <span>*</span>
-              </span>
-              <input
-                type="number"
-                required
-                min={1}
-                max={10}
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
-              />
-            </div>
-            <div>
-              <span>酒精度(-100 ~ 100)</span>
-              <input
-                type="number"
-                min={-100}
-                max={100}
-                value={alcohol}
-                onChange={(e) => setAlcohol(e.target.value)}
-              />
-            </div>
+            </Field>
+            <NumberField
+              label="难度(1-10)"
+              required
+              min={1}
+              max={10}
+              value={difficulty}
+              onChange={(v) => {
+                setDifficulty(v);
+                clearFieldError("difficulty");
+              }}
+              invalid={!!fieldErrors.difficulty}
+            />
+            <NumberField
+              label="酒精度(-100 ~ 100)"
+              min={-100}
+              max={100}
+              value={alcohol}
+              onChange={setAlcohol}
+            />
           </div>
+          <CheckboxRow
+            id="glint"
+            label="附魔光泽"
+            description="药水瓶是否显示附魔效果"
+            checked={glint}
+            onCheckedChange={setGlint}
+          />
+        </section>
 
-          <label>
-            <input type="checkbox" checked={glint} onChange={(e) => setGlint(e.target.checked)} />
-            药水瓶是否显示附魔效果
-          </label>
+        <Separator />
 
-          <div>
-            <div>药水效果</div>
-            <div>
-              {EFFECTS.map((effect) => {
-                const st = effects[effect.id]!;
-                const isInstant = INSTANT_EFFECTS.has(effect.id);
+        <section className="space-y-4">
+          <SectionTitle title="药水效果" description="勾选启用效果,并在下方设置等级与持续时间" />
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {EFFECTS.map((e) => (
+              <label key={e.id} className="flex cursor-pointer items-center gap-2">
+                <Checkbox
+                  checked={effects[e.id]!.enabled}
+                  onCheckedChange={(v) => setEffectEnabled(e.id, v)}
+                />
+                <span className="text-sm">{e.name}</span>
+              </label>
+            ))}
+          </div>
+          {enabledEffects.length > 0 && (
+            <div className="rounded-lg border">
+              {enabledEffects.map((e, i) => {
+                const st = effects[e.id]!;
+                const isInstant = INSTANT_EFFECTS.has(e.id);
                 return (
-                  <div key={effect.id}>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={st.enabled}
-                        onChange={(e) => setEffectEnabled(effect.id, e.target.checked)}
+                  <div
+                    key={e.id}
+                    className={cn(
+                      "flex flex-wrap items-center gap-x-6 gap-y-3 px-3 py-2.5",
+                      i > 0 && "border-t"
+                    )}
+                  >
+                    <span className="w-24 shrink-0 text-sm font-medium">{e.name}</span>
+                    <div className="flex min-w-40 flex-1 items-center gap-2">
+                      <span className="w-8 shrink-0 text-xs text-muted-foreground">等级</span>
+                      <Slider
+                        className="w-36 shrink-0"
+                        min={1}
+                        max={255}
+                        value={num(st.level) ?? 1}
+                        onValueChange={(v) => updateEffect(e.id, { level: String(v) })}
                       />
-                      {effect.name}
-                    </label>
-                    {st.enabled && (
-                      <>
-                        <input
-                          type="number"
+                      <Input
+                        type="number"
+                        className="w-20 text-center"
+                        min={1}
+                        max={255}
+                        value={st.level === "" ? "1" : st.level}
+                        onChange={(ev) =>
+                          updateEffect(e.id, {
+                            level: ev.target.value === "" ? "1" : ev.target.value,
+                          })
+                        }
+                        onWheel={(ev) => ev.currentTarget.blur()}
+                      />
+                    </div>
+                    {!isInstant && (
+                      <div className="flex min-w-40 flex-1 items-center gap-2">
+                        <span className="w-8 shrink-0 text-xs text-muted-foreground">时间</span>
+                        <Slider
+                          className="w-36 shrink-0"
                           min={1}
-                          max={255}
-                          value={st.level}
-                          onChange={(e) => updateEffect(effect.id, { level: e.target.value })}
-                          placeholder="等级"
+                          max={1638}
+                          value={num(st.duration) ?? 1}
+                          onValueChange={(v) =>
+                            updateEffect(e.id, { duration: String(v) })
+                          }
                         />
-                        {!isInstant && (
-                          <input
-                            type="number"
-                            min={1}
-                            max={1638}
-                            value={st.duration}
-                            onChange={(e) => updateEffect(effect.id, { duration: e.target.value })}
-                            placeholder="秒"
-                          />
-                        )}
-                      </>
+                        <Input
+                          type="number"
+                          className="w-20 text-center"
+                          min={1}
+                          max={1638}
+                          value={st.duration === "" ? "1" : st.duration}
+                          onChange={(ev) =>
+                            updateEffect(e.id, {
+                              duration: ev.target.value === "" ? "1" : ev.target.value,
+                            })
+                          }
+                          onWheel={(ev) => ev.currentTarget.blur()}
+                        />
+                      </div>
                     )}
                   </div>
                 );
               })}
             </div>
-          </div>
+          )}
+        </section>
 
-          <div>
-            <button type="button" onClick={resetForm}>
-              一键清空
-            </button>
-            <button type="submit">
-              生成
-            </button>
-          </div>
-        </form>
+        <div className="flex items-center justify-between gap-2 border-t pt-5">
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={
+                <Button type="button" variant="outline">
+                  <RotateCcw data-icon="inline-start" /> 一键清空
+                </Button>
+              }
+            />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认清空?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  所有已填写的配方数据将被清除,此操作无法撤销。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction variant="destructive" onClick={resetForm}>
+                  清空
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Button type="submit">
+            <Sparkles data-icon="inline-start" /> 生成配方
+          </Button>
+        </div>
+      </form>
 
-        {yaml && (
-          <section>
-            <h2>生成的配方</h2>
-            <ul>
+      <Separator className="my-10" />
+
+      <section className="space-y-4">
+        {yaml ? (
+          <>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">生成的配方</h2>
+                <p className="text-sm text-muted-foreground">配方预览与 YAML 代码</p>
+              </div>
+              <Button variant="outline" onClick={copyYaml}>
+                {copied ? (
+                  <>
+                    <Check data-icon="inline-start" /> 已复制!
+                  </>
+                ) : (
+                  <>
+                    <Copy data-icon="inline-start" /> 复制代码
+                  </>
+                )}
+              </Button>
+            </div>
+            <ul className="space-y-1 text-sm">
               {summary.map((line, i) => (
                 <li key={i} dangerouslySetInnerHTML={{ __html: parseColorText(line) }} />
               ))}
             </ul>
-            <textarea readOnly value={yaml} rows={10} />
-            <button type="button" onClick={copyYaml}>
-              {copied ? "已复制!" : "复制配方代码"}
-            </button>
-          </section>
+            <ScrollArea className="max-h-96 rounded-lg border bg-muted/40">
+              <pre className="p-4 font-mono text-xs leading-relaxed">{yaml}</pre>
+            </ScrollArea>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-16 text-center">
+            <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+              <Beer className="size-5 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium">还没有配方</p>
+            <p className="text-xs text-muted-foreground">填写上方表单后点击「生成配方」</p>
+          </div>
         )}
-
-        {error && <div>{error}</div>}
-      </div>
+      </section>
     </div>
   );
 }
