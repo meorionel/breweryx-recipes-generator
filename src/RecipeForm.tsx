@@ -464,11 +464,11 @@ export function RecipeForm() {
                 />
                 <ComboboxContent>
                   <ComboboxList>
-                    {itemOptions.map((item) => (
+                    {(item) => (
                       <ComboboxItem key={item.id} value={item}>
                         {item.cn} ({item.id})
                       </ComboboxItem>
-                    ))}
+                    )}
                   </ComboboxList>
                 </ComboboxContent>
               </Combobox>
