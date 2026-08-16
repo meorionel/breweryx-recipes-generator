@@ -11,6 +11,10 @@
     "title": "Recipe Info",
     "subtitle": "Fill in brewing parameters to generate BreweryX recipe code"
   },
+  "key": {
+    "label": "Recipe Key",
+    "placeholder": "Leave blank to auto-generate"
+  },
   "quality": {
     "label": "Differentiate three qualities",
     "desc": "Set separate names and lore for Poor, Normal and Excellent qualities"
@@ -31,7 +35,23 @@
   },
   "drink": {
     "title": "Drink message",
-    "ph": "Tastes great"
+    "message": "Message",
+    "messagePh": "Tastes great",
+    "drinktitle": "Title",
+    "titlePh": "Title shown after drinking"
+  },
+  "commands": {
+    "title": "Commands",
+    "desc": "Executed after drinking, one per line. Supports +/++/+++ quality prefixes and \\Ns delay suffixes",
+    "server": "Server commands",
+    "player": "Player commands",
+    "ph": "e.g. say Cheers"
+  },
+  "customModelData": {
+    "bad": "Poor model data",
+    "normal": "Normal model data",
+    "good": "Excellent model data",
+    "ph": "Leave blank to omit"
   },
   "ingredients": {
     "title": "Ingredients",
@@ -72,6 +92,7 @@
     "desc": "Check to enable an effect and configure its level and duration below",
     "level": "Level",
     "time": "Time",
+    "range": "Range",
     "names": {
       "speed": "Speed",
       "slowness": "Slowness",
@@ -157,6 +178,7 @@
     "keyMin": "{{key}} must be ≥ {{min}}",
     "keyRequired": "{{key}} is required",
     "keyNotString": "{{key}} must be a string",
+    "keyNotArray": "{{key}} must be an array of strings",
     "qualityNotBoolean": "quality must be a boolean",
     "nameNotArray": "name must be an array",
     "nameCount": "name needs {{count}} non-empty value(s)",
@@ -170,10 +192,12 @@
     "effectsNotArray": "effects must be an array",
     "effectNotObject": "Each effect must be an object { id, level, duration }",
     "effectBadId": "Effect \"{{id}}\" is not a valid potion effect",
-    "effectBadLevel": "Effect \"{{id}}\" level must be an integer between {{min}}-{{max}}",
-    "effectBadDuration": "Effect \"{{id}}\" duration must be an integer between {{min}}-{{max}} seconds",
+    "effectBadLevel": "Effect \"{{id}}\" level must be an integer between {{min}}-{{max}}, or a range like \"1-2\"",
+    "effectBadDuration": "Effect \"{{id}}\" duration must be an integer between {{min}}-{{max}} seconds, or a range like \"30-40\"",
     "colorInvalid": "color \"{{color}}\" must be a color name or 6-digit HEX (without #)",
-    "glintNotBoolean": "glint must be a boolean true/false"
+    "glintNotBoolean": "glint must be a boolean true/false",
+    "customModelDataNotArray": "customModelData must be an array of strings",
+    "customModelDataCount": "customModelData needs {{count}} non-empty value(s)"
   },
   "summary": {
     "name": "Name: {{name}}",
@@ -188,6 +212,10 @@
     "alcohol": "Alcohol: {{value}}",
     "lore": "Lore: {{value}}",
     "drinkmessage": "Drink message: {{value}}",
+    "drinktitle": "Drink title: {{value}}",
+    "customModelData": "Custom model data: {{value}}",
+    "servercommands": "Server commands: {{value}}",
+    "playercommands": "Player commands: {{value}}",
     "glint": "Glint: Yes",
     "loreGroup": {
       "common": "Common",

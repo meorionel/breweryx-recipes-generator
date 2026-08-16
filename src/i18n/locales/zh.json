@@ -11,6 +11,10 @@
     "title": "配方信息",
     "subtitle": "填写酿造参数,生成 BreweryX 配方代码"
   },
+  "key": {
+    "label": "配方 Key",
+    "placeholder": "留空则自动生成"
+  },
   "quality": {
     "label": "区分三种品质",
     "desc": "分别填写劣质、普通、优质三种品质的名称与描述"
@@ -31,7 +35,23 @@
   },
   "drink": {
     "title": "饮用消息",
-    "ph": "味道不错"
+    "message": "消息",
+    "messagePh": "味道不错",
+    "drinktitle": "Title",
+    "titlePh": "饮用后显示的大标题"
+  },
+  "commands": {
+    "title": "命令",
+    "desc": "饮用后执行,每行一条,支持 +/++/+++ 品质前缀与 \\Ns 延迟后缀",
+    "server": "服务器命令",
+    "player": "玩家命令",
+    "ph": "如: say 干杯"
+  },
+  "customModelData": {
+    "bad": "劣质模型数据",
+    "normal": "普通模型数据",
+    "good": "优质模型数据",
+    "ph": "留空则不输出"
   },
   "ingredients": {
     "title": "原料",
@@ -72,6 +92,7 @@
     "desc": "勾选启用效果,并在下方设置等级与持续时间",
     "level": "等级",
     "time": "时间",
+    "range": "范围",
     "names": {
       "speed": "迅捷",
       "slowness": "缓慢",
@@ -157,6 +178,7 @@
     "keyMin": "{{key}} 必须 ≥ {{min}}",
     "keyRequired": "{{key}} 为必填项",
     "keyNotString": "{{key}} 必须是字符串",
+    "keyNotArray": "{{key}} 必须是字符串数组",
     "qualityNotBoolean": "quality 必须是布尔值",
     "nameNotArray": "name 必须是数组",
     "nameCount": "name 需要 {{count}} 个非空值",
@@ -170,10 +192,12 @@
     "effectsNotArray": "effects 必须是数组",
     "effectNotObject": "effects 的每一项必须是对象 { id, level, duration }",
     "effectBadId": "effects 项 \"{{id}}\" 不是有效的药水效果",
-    "effectBadLevel": "effects 项 \"{{id}}\" 的等级必须是 {{min}}-{{max}} 的整数",
-    "effectBadDuration": "effects 项 \"{{id}}\" 的时长必须是 {{min}}-{{max}} 秒的整数",
+    "effectBadLevel": "effects 项 \"{{id}}\" 的等级必须是 {{min}}-{{max}} 的整数,或形如 \"1-2\" 的范围",
+    "effectBadDuration": "effects 项 \"{{id}}\" 的时长必须是 {{min}}-{{max}} 秒的整数,或形如 \"30-40\" 的范围",
     "colorInvalid": "color \"{{color}}\" 必须是颜色名或 6 位 HEX(不带 #)",
-    "glintNotBoolean": "glint 必须是布尔值 true/false"
+    "glintNotBoolean": "glint 必须是布尔值 true/false",
+    "customModelDataNotArray": "customModelData 必须是字符串数组",
+    "customModelDataCount": "customModelData 需要 {{count}} 个非空值"
   },
   "summary": {
     "name": "名称: {{name}}",
@@ -188,6 +212,10 @@
     "alcohol": "酒精度: {{value}}",
     "lore": "描述: {{value}}",
     "drinkmessage": "饮用消息: {{value}}",
+    "drinktitle": "饮用 Title: {{value}}",
+    "customModelData": "自定义模型数据: {{value}}",
+    "servercommands": "服务器命令: {{value}}",
+    "playercommands": "玩家命令: {{value}}",
     "glint": "发光: 是",
     "loreGroup": {
       "common": "通用",

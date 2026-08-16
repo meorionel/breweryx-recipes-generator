@@ -57,12 +57,37 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
-type EffectState = { enabled: boolean; level: string; duration: string };
+type EffectState = {
+  enabled: boolean;
+  level: string;
+  levelMin: string;
+  levelMax: string;
+  levelRange: boolean;
+  duration: string;
+  durationMin: string;
+  durationMax: string;
+  durationRange: boolean;
+};
 type EffectStates = Record<string, EffectState>;
 type ItemOption = { cn: string; id: string };
 
 const initialEffectStates = (): EffectStates =>
-  Object.fromEntries(EFFECTS.map((e) => [e.id, { enabled: false, level: "", duration: "" }]));
+  Object.fromEntries(
+    EFFECTS.map((e) => [
+      e.id,
+      {
+        enabled: false,
+        level: "",
+        levelMin: "1",
+        levelMax: "1",
+        levelRange: false,
+        duration: "",
+        durationMin: "1",
+        durationMax: "1",
+        durationRange: false,
+      },
+    ])
+  );
 
 const num = (v: string): number | undefined => {
   const n = Number(v);
@@ -145,6 +170,7 @@ const Field = ({
 export function RecipeForm() {
   const { t } = useTranslation();
   const translate: Translate = (key, vars) => t(key, vars);
+  const [recipeKey, setRecipeKey] = useState("");
   const [quality, setQuality] = useState(false);
   const [nameBad, setNameBad] = useState("");
   const [nameNormal, setNameNormal] = useState("");
@@ -154,6 +180,12 @@ export function RecipeForm() {
   const [loreNormal, setLoreNormal] = useState("");
   const [loreGood, setLoreGood] = useState("");
   const [drinkmessage, setDrinkmessage] = useState("");
+  const [drinktitle, setDrinktitle] = useState("");
+  const [serverCommands, setServerCommands] = useState("");
+  const [playerCommands, setPlayerCommands] = useState("");
+  const [cmdBad, setCmdBad] = useState("");
+  const [cmdNormal, setCmdNormal] = useState("");
+  const [cmdGood, setCmdGood] = useState("");
   const [cookingtime, setCookingtime] = useState("0");
   const [enableDistill, setEnableDistill] = useState(false);
   const [distillruns, setDistillruns] = useState("0");
@@ -215,6 +247,46 @@ export function RecipeForm() {
     setEffects((prev) => ({ ...prev, [id]: { ...prev[id]!, ...patch } }));
   };
 
+  const toggleLevelRange = (id: string, range: boolean) => {
+    const st = effects[id]!;
+    if (range) {
+      const current = st.level.trim() === "" ? "1" : st.level.trim();
+      const parts = current.split("-");
+      updateEffect(id, {
+        levelRange: true,
+        levelMin: parts[0]?.trim() || "1",
+        levelMax: parts[1]?.trim() || parts[0]?.trim() || "1",
+      });
+    } else {
+      const value = st.levelRange ? st.levelMax.trim() || st.levelMin : st.level;
+      updateEffect(id, {
+        levelRange: false,
+        level: value.trim() === "" ? "1" : value.trim(),
+      });
+    }
+  };
+
+  const toggleDurationRange = (id: string, range: boolean) => {
+    const st = effects[id]!;
+    if (range) {
+      const current = st.duration.trim() === "" ? "1" : st.duration.trim();
+      const parts = current.split("-");
+      updateEffect(id, {
+        durationRange: true,
+        durationMin: parts[0]?.trim() || "1",
+        durationMax: parts[1]?.trim() || parts[0]?.trim() || "1",
+      });
+    } else {
+      const value = st.durationRange
+        ? st.durationMax.trim() || st.durationMin
+        : st.duration;
+      updateEffect(id, {
+        durationRange: false,
+        duration: value.trim() === "" ? "1" : value.trim(),
+      });
+    }
+  };
+
   const setEffectEnabled = (id: string, enabled: boolean) => {
     setEffects((prev) => ({ ...prev, [id]: { ...prev[id]!, enabled } }));
   };
@@ -238,6 +310,7 @@ export function RecipeForm() {
     setFieldErrors({});
 
     const payload = {
+      key: str(recipeKey),
       quality,
       name: quality
         ? [str(nameBad), str(nameNormal), str(nameGood)]
@@ -260,16 +333,32 @@ export function RecipeForm() {
           }
         : { common: lines(loreCommon) },
       drinkmessage: str(drinkmessage),
+      drinktitle: str(drinktitle),
       glint,
       effects: EFFECTS.filter((e) => effects[e.id]?.enabled).map((e) => {
         const st = effects[e.id]!;
-        const eff: { id: string; level: number; duration?: number } = {
+        const eff: { id: string; level: string; duration?: string } = {
           id: e.id,
-          level: Number(st.level),
+          level: st.levelRange
+            ? `${st.levelMin || "1"}-${st.levelMax || "1"}`
+            : st.level.trim() === ""
+              ? "1"
+              : st.level.trim(),
         };
-        if (st.duration !== "") eff.duration = Number(st.duration);
+        if (st.durationRange) {
+          eff.duration = `${st.durationMin || "1"}-${st.durationMax || "1"}`;
+        } else if (st.duration !== "") {
+          eff.duration = st.duration.trim();
+        }
         return eff;
       }),
+      customModelData: (() => {
+        const cmds = quality ? [cmdBad, cmdNormal, cmdGood] : [cmdNormal];
+        const filled = cmds.map((v) => v.trim()).filter((v) => v !== "");
+        return filled.length > 0 ? filled : undefined;
+      })(),
+      servercommands: lines(serverCommands),
+      playercommands: lines(playerCommands),
     };
 
     const result = validateRecipe(payload, translate);
@@ -294,6 +383,7 @@ export function RecipeForm() {
   };
 
   const resetForm = () => {
+    setRecipeKey("");
     setQuality(false);
     setNameBad("");
     setNameNormal("");
@@ -303,6 +393,12 @@ export function RecipeForm() {
     setLoreNormal("");
     setLoreGood("");
     setDrinkmessage("");
+    setDrinktitle("");
+    setServerCommands("");
+    setPlayerCommands("");
+    setCmdBad("");
+    setCmdNormal("");
+    setCmdGood("");
     setCookingtime("0");
     setEnableDistill(false);
     setDistillruns("0");
@@ -328,7 +424,7 @@ export function RecipeForm() {
   useEffect(() => {
     setSummary([]);
     setYaml("");
-  }, [quality]);
+  }, [quality, recipeKey]);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -339,6 +435,14 @@ export function RecipeForm() {
 
       <form onSubmit={handleSubmit} noValidate className="space-y-8">
         <section className="space-y-4">
+          <Field label={t("key.label")}>
+            <Input
+              type="text"
+              value={recipeKey}
+              onChange={(e) => setRecipeKey(e.target.value)}
+              placeholder={t("key.placeholder")}
+            />
+          </Field>
           <CheckboxRow
             id="quality"
             label={t("quality.label")}
@@ -436,12 +540,46 @@ export function RecipeForm() {
 
         <section className="space-y-4">
           <SectionTitle title={t("drink.title")} />
-          <Input
-            type="text"
-            value={drinkmessage}
-            onChange={(e) => setDrinkmessage(e.target.value)}
-            placeholder={t("drink.ph")}
-          />
+          <Field label={t("drink.message")}>
+            <Input
+              type="text"
+              value={drinkmessage}
+              onChange={(e) => setDrinkmessage(e.target.value)}
+              placeholder={t("drink.messagePh")}
+            />
+          </Field>
+          <Field label={t("drink.drinktitle")}>
+            <Input
+              type="text"
+              value={drinktitle}
+              onChange={(e) => setDrinktitle(e.target.value)}
+              placeholder={t("drink.titlePh")}
+            />
+          </Field>
+        </section>
+
+        <Separator />
+
+        <section className="space-y-4">
+          <SectionTitle title={t("commands.title")} description={t("commands.desc")} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t("commands.server")}>
+              <Textarea
+                value={serverCommands}
+                onChange={(e) => setServerCommands(e.target.value)}
+                rows={4}
+                placeholder={t("commands.ph")}
+              />
+            </Field>
+            <Field label={t("commands.player")}>
+              <Textarea
+                value={playerCommands}
+                onChange={(e) => setPlayerCommands(e.target.value)}
+                rows={4}
+                placeholder={t("commands.ph")}
+              />
+            </Field>
+          </div>
         </section>
 
         <Separator />
@@ -633,6 +771,36 @@ export function RecipeForm() {
               onChange={setAlcohol}
             />
           </div>
+          <div className="space-y-3">
+            {quality && (
+              <Field label={t("customModelData.bad")}>
+                <Input
+                  type="text"
+                  value={cmdBad}
+                  onChange={(e) => setCmdBad(e.target.value)}
+                  placeholder={t("customModelData.ph")}
+                />
+              </Field>
+            )}
+            <Field label={t("customModelData.normal")}>
+              <Input
+                type="text"
+                value={cmdNormal}
+                onChange={(e) => setCmdNormal(e.target.value)}
+                placeholder={t("customModelData.ph")}
+              />
+            </Field>
+            {quality && (
+              <Field label={t("customModelData.good")}>
+                <Input
+                  type="text"
+                  value={cmdGood}
+                  onChange={(e) => setCmdGood(e.target.value)}
+                  placeholder={t("customModelData.ph")}
+                />
+              </Field>
+            )}
+          </div>
           <CheckboxRow
             id="glint"
             label={t("appearance.glint")}
@@ -673,58 +841,124 @@ export function RecipeForm() {
                     <span className="w-24 shrink-0 text-sm font-medium">
                       {t(`effects.names.${e.id}`)}
                     </span>
-                    <div className="flex min-w-40 flex-1 items-center gap-2">
+                    <div className="flex min-w-40 flex-1 flex-wrap items-center gap-2">
                       <span className="w-8 shrink-0 text-xs text-muted-foreground">
                         {t("effects.level")}
                       </span>
-                      <Slider
-                        className="w-36 shrink-0"
-                        min={1}
-                        max={255}
-                        value={num(st.level) ?? 1}
-                        onValueChange={(v) => updateEffect(e.id, { level: String(v) })}
-                      />
-                      <Input
-                        type="number"
-                        className="w-20 text-center"
-                        min={1}
-                        max={255}
-                        value={st.level === "" ? "1" : st.level}
-                        onChange={(ev) =>
-                          updateEffect(e.id, {
-                            level: ev.target.value === "" ? "1" : ev.target.value,
-                          })
-                        }
-                        onWheel={(ev) => ev.currentTarget.blur()}
-                      />
+                      <label className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground">
+                        <Checkbox
+                          checked={st.levelRange}
+                          onCheckedChange={(v) => toggleLevelRange(e.id, v)}
+                        />
+                        {t("effects.range")}
+                      </label>
+                      {st.levelRange ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            className="w-16 text-center"
+                            min={1}
+                            max={255}
+                            value={st.levelMin}
+                            onChange={(ev) => updateEffect(e.id, { levelMin: ev.target.value })}
+                            onWheel={(ev) => ev.currentTarget.blur()}
+                          />
+                          <span className="text-muted-foreground">-</span>
+                          <Input
+                            type="number"
+                            className="w-16 text-center"
+                            min={1}
+                            max={255}
+                            value={st.levelMax}
+                            onChange={(ev) => updateEffect(e.id, { levelMax: ev.target.value })}
+                            onWheel={(ev) => ev.currentTarget.blur()}
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <Slider
+                            className="w-36 shrink-0"
+                            min={1}
+                            max={255}
+                            value={num(st.level) ?? 1}
+                            onValueChange={(v) => updateEffect(e.id, { level: String(v) })}
+                          />
+                          <Input
+                            type="number"
+                            className="w-20 text-center"
+                            min={1}
+                            max={255}
+                            value={st.level === "" ? "1" : st.level}
+                            onChange={(ev) =>
+                              updateEffect(e.id, {
+                                level: ev.target.value === "" ? "1" : ev.target.value,
+                              })
+                            }
+                            onWheel={(ev) => ev.currentTarget.blur()}
+                          />
+                        </>
+                      )}
                     </div>
                     {!isInstant && (
-                      <div className="flex min-w-40 flex-1 items-center gap-2">
+                      <div className="flex min-w-40 flex-1 flex-wrap items-center gap-2">
                         <span className="w-8 shrink-0 text-xs text-muted-foreground">
                           {t("effects.time")}
                         </span>
-                        <Slider
-                          className="w-36 shrink-0"
-                          min={1}
-                          max={1638}
-                          value={num(st.duration) ?? 1}
-                          onValueChange={(v) =>
-                            updateEffect(e.id, { duration: String(v) })
-                          }
-                        />
-                        <Input
-                          type="number"
-                          className="w-20 text-center"
-                          min={1}
-                          max={1638}
-                          value={st.duration === "" ? "1" : st.duration}
-                          onChange={(ev) =>
-                            updateEffect(e.id, {
-                              duration: ev.target.value === "" ? "1" : ev.target.value,
-                            })
-                          }
-                          onWheel={(ev) => ev.currentTarget.blur()}
-                        />
+                        <label className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground">
+                          <Checkbox
+                            checked={st.durationRange}
+                            onCheckedChange={(v) => toggleDurationRange(e.id, v)}
+                          />
+                          {t("effects.range")}
+                        </label>
+                        {st.durationRange ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              className="w-16 text-center"
+                              min={1}
+                              max={1638}
+                              value={st.durationMin}
+                              onChange={(ev) => updateEffect(e.id, { durationMin: ev.target.value })}
+                              onWheel={(ev) => ev.currentTarget.blur()}
+                            />
+                            <span className="text-muted-foreground">-</span>
+                            <Input
+                              type="number"
+                              className="w-16 text-center"
+                              min={1}
+                              max={1638}
+                              value={st.durationMax}
+                              onChange={(ev) => updateEffect(e.id, { durationMax: ev.target.value })}
+                              onWheel={(ev) => ev.currentTarget.blur()}
+                            />
+                          </div>
+                        ) : (
+                          <>
+                            <Slider
+                              className="w-36 shrink-0"
+                              min={1}
+                              max={1638}
+                              value={num(st.duration) ?? 1}
+                              onValueChange={(v) =>
+                                updateEffect(e.id, { duration: String(v) })
+                              }
+                            />
+                            <Input
+                              type="number"
+                              className="w-20 text-center"
+                              min={1}
+                              max={1638}
+                              value={st.duration === "" ? "1" : st.duration}
+                              onChange={(ev) =>
+                                updateEffect(e.id, {
+                                  duration: ev.target.value === "" ? "1" : ev.target.value,
+                                })
+                              }
+                              onWheel={(ev) => ev.currentTarget.blur()}
+                            />
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

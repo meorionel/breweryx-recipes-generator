@@ -26,7 +26,7 @@ const EFFECT_NAME_BY_ID = new Map(EFFECTS.map((e) => [e.id, e.name]))
 const WOOD_LABEL_BY_VALUE = new Map(WOOD_OPTIONS.map((w) => [w.value, w.label]))
 
 export type IngredientInput = { item: string; amount: number }
-export type EffectInput = { id: string; level: number; duration?: number }
+export type EffectInput = { id: string; level: string; duration?: string }
 
 export type LoreInput = {
   common: string[]
@@ -50,7 +50,11 @@ export type RecipeInput = {
   difficulty: number
   alcohol?: number
   drinkmessage?: string
+  drinktitle?: string
   glint?: boolean
+  customModelData?: string[]
+  servercommands?: string[]
+  playercommands?: string[]
   effects?: EffectInput[]
 }
 
@@ -121,6 +125,29 @@ export function validateRecipe(raw: unknown, translate?: Translate): ValidationR
       return undefined
     }
     return v.trim()
+  }
+
+  const RANGE_RE = /^\s*\d+\s*(?:-\s*\d+\s*)?$/
+  const parseRange = (v: unknown, min: number, max: number): string | undefined => {
+    if (v === undefined || v === null || v === '') return undefined
+    const text = String(v).trim()
+    if (!RANGE_RE.test(text)) return undefined
+    const nums = text.split('-').map(Number)
+    if (nums.some((n) => !Number.isInteger(n) || n < min || n > max)) return undefined
+    return text
+  }
+
+  const optStringArray = (key: string): string[] | undefined => {
+    const v = input[key]
+    if (isEmpty(v)) return undefined
+    if (!Array.isArray(v)) {
+      errors.push(t('validate.keyNotArray', `${key} 必须是字符串数组`, { key }))
+      return undefined
+    }
+    const arr = v
+      .map((s) => (typeof s === 'string' ? s.trim() : ''))
+      .filter((s) => s !== '')
+    return arr.length > 0 ? arr : undefined
   }
 
   let quality = false
@@ -221,41 +248,32 @@ export function validateRecipe(raw: unknown, translate?: Translate): ValidationR
           )
           continue
         }
-        if (
-          typeof level !== 'number' ||
-          !Number.isInteger(level) ||
-          level < EFFECT_LEVEL_MIN ||
-          level > EFFECT_LEVEL_MAX
-        ) {
+        const levelStr = parseRange(level, EFFECT_LEVEL_MIN, EFFECT_LEVEL_MAX)
+        if (levelStr === undefined) {
           errors.push(
             t(
               'validate.effectBadLevel',
-              `effects 项 "${id}" 的等级必须是 ${EFFECT_LEVEL_MIN}-${EFFECT_LEVEL_MAX} 的整数`,
+              `effects 项 "${id}" 的等级必须是 ${EFFECT_LEVEL_MIN}-${EFFECT_LEVEL_MAX} 的整数,或形如 "1-2" 的范围`,
               { id, min: EFFECT_LEVEL_MIN, max: EFFECT_LEVEL_MAX }
             )
           )
           continue
         }
-        let dur: number | undefined
+        let dur: string | undefined
         if (duration !== undefined && duration !== null && duration !== '') {
-          if (
-            typeof duration !== 'number' ||
-            !Number.isInteger(duration) ||
-            duration < EFFECT_DURATION_MIN ||
-            duration > EFFECT_DURATION_MAX
-          ) {
+          dur = parseRange(duration, EFFECT_DURATION_MIN, EFFECT_DURATION_MAX)
+          if (dur === undefined) {
             errors.push(
               t(
                 'validate.effectBadDuration',
-                `effects 项 "${id}" 的时长必须是 ${EFFECT_DURATION_MIN}-${EFFECT_DURATION_MAX} 秒的整数`,
+                `effects 项 "${id}" 的时长必须是 ${EFFECT_DURATION_MIN}-${EFFECT_DURATION_MAX} 秒的整数,或形如 "30-40" 的范围`,
                 { id, min: EFFECT_DURATION_MIN, max: EFFECT_DURATION_MAX }
               )
             )
             continue
           }
-          dur = duration
         }
-        effects.push({ id, level, duration: dur })
+        effects.push({ id, level: levelStr, duration: dur })
       }
     }
   }
@@ -276,6 +294,7 @@ export function validateRecipe(raw: unknown, translate?: Translate): ValidationR
   }
 
   const drinkmessage = optString('drinkmessage')
+  const drinktitle = optString('drinktitle')
 
   let glint: boolean | undefined
   if (input.glint !== undefined && input.glint !== null && input.glint !== '') {
@@ -287,6 +306,30 @@ export function validateRecipe(raw: unknown, translate?: Translate): ValidationR
       errors.push(t('validate.glintNotBoolean', 'glint 必须是布尔值 true/false'))
     }
   }
+
+  let customModelData: string[] | undefined
+  if (input.customModelData !== undefined && input.customModelData !== null) {
+    if (!Array.isArray(input.customModelData)) {
+      errors.push(t('validate.customModelDataNotArray', 'customModelData 必须是字符串数组'))
+    } else {
+      const arr = input.customModelData
+        .map((v) => (typeof v === 'string' ? v.trim() : ''))
+        .filter((s) => s !== '')
+      const expected = quality ? 3 : 1
+      if (arr.length !== 0 && arr.length !== expected) {
+        errors.push(
+          t('validate.customModelDataCount', `customModelData 需要 ${expected} 个非空值`, {
+            count: expected,
+          })
+        )
+      } else if (arr.length > 0) {
+        customModelData = arr
+      }
+    }
+  }
+
+  const servercommands = optStringArray('servercommands')
+  const playercommands = optStringArray('playercommands')
 
   const rawKey = optString('key')
 
@@ -309,7 +352,11 @@ export function validateRecipe(raw: unknown, translate?: Translate): ValidationR
       difficulty: difficulty!,
       alcohol,
       drinkmessage,
+      drinktitle,
       glint,
+      customModelData,
+      servercommands,
+      playercommands,
       effects,
     },
   }
@@ -371,7 +418,13 @@ function buildRecipe(input: RecipeInput): string[] {
   addScalar(0, 'alcohol', input.alcohol)
   addList(0, 'lore', loreLines)
   addScalar(0, 'drinkmessage', input.drinkmessage)
+  addScalar(0, 'drinktitle', input.drinktitle)
   addScalar(0, 'glint', input.glint)
+  if (input.customModelData && input.customModelData.length > 0) {
+    addScalar(0, 'customModelData', input.customModelData.join('/'))
+  }
+  addList(0, 'servercommands', input.servercommands)
+  addList(0, 'playercommands', input.playercommands)
   addList(
     0,
     'effects',
@@ -454,6 +507,21 @@ export function buildSummary(input: RecipeInput, translate?: Translate): string[
 
   if (input.drinkmessage) {
     lines.push(t('summary.drinkmessage', `饮用消息: ${input.drinkmessage}`, { value: input.drinkmessage }))
+  }
+  if (input.drinktitle) {
+    lines.push(t('summary.drinktitle', `饮用 Title: ${input.drinktitle}`, { value: input.drinktitle }))
+  }
+  if (input.customModelData && input.customModelData.length > 0) {
+    const cmdText = input.customModelData.join('/')
+    lines.push(t('summary.customModelData', `自定义模型数据: ${cmdText}`, { value: cmdText }))
+  }
+  if (input.servercommands && input.servercommands.length > 0) {
+    const cmdText = input.servercommands.join('; ')
+    lines.push(t('summary.servercommands', `服务器命令: ${cmdText}`, { value: cmdText }))
+  }
+  if (input.playercommands && input.playercommands.length > 0) {
+    const cmdText = input.playercommands.join('; ')
+    lines.push(t('summary.playercommands', `玩家命令: ${cmdText}`, { value: cmdText }))
   }
   if (input.glint) {
     lines.push(t('summary.glint', '发光: 是'))
