@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/meorionel/breweryx-recipes-generator/raw/main/public/logo.png" width="80" alt="BreweryX Recipes Generator" />
+    <img src="https://github.com/meorionel/breweryx-recipes-generator/blob/master/public/logo.png?raw=true" width="80" alt="BreweryX Recipes Generator" />
     <h2 align="center">BreweryX Recipes Generator</h2>
 </p>
 
