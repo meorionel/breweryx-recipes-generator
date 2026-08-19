@@ -7,6 +7,7 @@
     "toggle": "Toggle theme"
   },
   "language": "Language",
+  "github": "GitHub",
   "form": {
     "title": "Recipe Info",
     "subtitle": "Fill in brewing parameters to generate BreweryX recipe code"

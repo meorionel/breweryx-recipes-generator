@@ -7,6 +7,7 @@
     "toggle": "切换主题"
   },
   "language": "语言",
+  "github": "GitHub",
   "form": {
     "title": "配方信息",
     "subtitle": "填写酿造参数,生成 BreweryX 配方代码"
